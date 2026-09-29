@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mitch's Dashboard</title>
 <meta name="theme-color" content="#141F2E">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dashboard">
 <link rel="manifest" href="manifest.webmanifest">
@@ -559,7 +560,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
      2. Constants and sample data
      3. Store (localStorage)
      4. Brain: parsing, categorising, scoring, audit, commands
-     5. AI (Claude, optional) and Integrations (stubs for later)
+     5. AI (Claude or your API key), calendar, sync and integrations
      6. Views
      7. Actions and events
    ===================================================================== */
@@ -1569,7 +1570,6 @@ function parseGig(title, location) {
   else if (kind && !/^(gigs?|playing|live music)$/i.test(kind)) act = kind;
   return { venue, act };
 }
-const parseGigTitle = t => parseGig(t).venue;
 /** Is this event one of Mitch's gigs, even when it's not in the Gigs calendar? */
 function looksLikeGig(title, calName) {
   const t = String(title || ''), cn = String(calName || '');
@@ -1665,7 +1665,6 @@ function mergeDuplicateGigs() {
     });
   });
 }
-const syncGigs = () => syncAllGigs();
 const Cal = {
   mcp: null, available: false, checked: false, unsubs: [], errors: {}, busy: false, pageError: null, watchDay: null,
   async init() {
@@ -1770,7 +1769,7 @@ const Feed = {
     clearInterval(this.timer);
     if (!this.active()) return;
     this.sync();
-    this.timer = setInterval(() => this.sync(), 5 * 60000);
+    this.timer = setInterval(() => this.sync().catch(() => {}), 5 * 60000);
   },
   errorText(e) {
     if (e && e.kind === 'key') return 'The calendar feed didn’t accept the key in the link. Copy the full link again, including the ?key= part.';
@@ -1844,7 +1843,7 @@ function loadFeedViaScript(url, anonymous) {
     const s = document.createElement('script');
     if (anonymous) s.crossOrigin = 'anonymous';   // don't send Google sign-in cookies
     let done = false;
-    const finish = (fn, v) => { if (done) return; done = true; clearTimeout(t); try { delete window[name]; } catch (e) { window[name] = undefined; } s.remove(); fn(v); };
+    const finish = (fn, v) => { if (done) return; done = true; clearTimeout(t); window[name] = () => {}; setTimeout(() => { try { delete window[name]; } catch (e) {} }, 60000); s.remove(); fn(v); };
     window[name] = data => finish(resolve, data);
     const t = setTimeout(() => finish(reject, { kind: 'timeout' }), 20000);
     s.onerror = () => finish(reject, { kind: 'network' });
@@ -1852,24 +1851,6 @@ function loadFeedViaScript(url, anonymous) {
     s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + name + '&t=' + Date.now();
     document.head.appendChild(s);
   });
-}
-/** Short spoken summary of tasks and prep, sent to the calendar script for the Google Home briefing.
-    The script adds today's calendar, gigs, birthdays and bills itself. Plain words only: it's read aloud. */
-function briefingText() {
-  const ctx = makeCtx(), open = openTasks(), parts = [];
-  const spoken = s => String(s).replace(/[^\p{L}\p{N}\s.,'’$&:-]/gu, '').replace(/\s+/g, ' ').trim();
-  const dueWords = d => { const n = D.diff(d); return n < 0 ? `${plural(-n, 'day')} overdue` : n === 0 ? 'due today' : n === 1 ? 'due tomorrow' : `due ${D.parse(d).toLocaleDateString('en-AU', { weekday: 'long' })}`; };
-  const overdue = open.filter(t => isActionable(t) && t.due && D.diff(t.due) < 0);
-  if (overdue.length) parts.push(`${plural(overdue.length, 'task')} overdue.`);
-  const top = rankTasks(ctx).filter(r => r.score > 0).slice(0, 3);
-  if (top.length) parts.push(`Top priorities: ${listJoin(top.map(r => spoken(r.t.title) + (r.t.due ? `, ${dueWords(r.t.due)}` : '')))}.`);
-  const g = upcomingGigs()[0];
-  if (g && D.diff(g.date) <= 7) { const r = gigReadiness(g); if (r.pct < 100) parts.push(`${spoken(venueBaseName(g.venue))} ${r.hosting ? 'hosting gig' : 'gig'} is ${r.pct} percent ready${r.issues[0] ? `: ${spoken(r.issues[0]).toLowerCase()}` : ''}.`); }
-  const ts = termStart();
-  if (ts && D.diff(ts) <= 7) { const l = termPrepList(ts), left = l.filter(x => !x.done).length; if (left) parts.push(`${plural(left, 'back-to-school job')} left before term starts.`); }
-  const owed = S().gigs.filter(x => D.diff(x.date) < 0 && !x.invoiced && needsInvoice(x) && !x.reviewPending);
-  if (owed.length) parts.push(`${plural(owed.length, 'gig')} still to invoice.`);
-  return (parts.join(' ') || 'Your task list is clear.').slice(0, 900);
 }
 /* ---------- Sync between devices ----------
    Your calendar script keeps a copy of the dashboard's data in a private file in your Google
@@ -1921,7 +1902,7 @@ const Sync = {
     } catch (e) { this.error = this.errorText(e && e.kind, e && e.message); }
     this.busy = false; renderSyncStatus();
   },
-  dirty() { if (!this.enabled()) return; this.pending = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 2500); },
+  dirty() { if (!this.enabled()) return; this.pending = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.push().catch(() => {}), 2500); },
   async push(force) {
     if (!this.enabled()) return;
     if (this.busy) { clearTimeout(this.timer); this.timer = setTimeout(() => this.push(force), 2000); return; }
@@ -1943,10 +1924,11 @@ const Sync = {
   start() {
     if (this.started || !this.enabled()) return;
     this.started = true;
-    this.pull('start');
-    setInterval(() => this.pull('timer'), 60000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.pull('focus'); else if (this.pending) this.push(); });
-    window.addEventListener('pagehide', () => { if (this.pending) this.push(); });
+    const quiet = pr => pr && pr.catch && pr.catch(() => {});
+    quiet(this.pull('start'));
+    setInterval(() => quiet(this.pull('timer')), 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) quiet(this.pull('focus')); else if (this.pending) quiet(this.push()); });
+    window.addEventListener('pagehide', () => { if (this.pending) quiet(this.push()); });
   }
 };
 function renderSyncStatus() {
@@ -1966,11 +1948,6 @@ function agoText(ms) {
 /* Integration layer. Each adapter keeps the same small shape so a real
    service can replace the stub without touching the views. */
 const Integrations = {
-  calendar: {
-    // Live: see the Cal module above (reads Google Calendar through the viewer's connector).
-    get connected() { return S().calendar.enabled; },
-    async pushEvent(/* gigOrTask */) { return null; }   // next step: needs create_event in the manifest
-  },
   email: {
     connected: false,
     draftInvoice(g) {
@@ -1982,9 +1959,6 @@ const Integrations = {
     },
     async findReplies(/* query */) { return []; }
   },
-  drive: { connected: false, async findTeachingResources(/* query */) { return []; } },
-  notion: { connected: false, async syncProjects(/* projects */) { return null; } },
-  music: { connected: false, async lookupSong(/* title */) { return null; } }  // key, tempo, chords
 };
 
 /* ---------- Teaching partner ----------
@@ -4084,12 +4058,6 @@ const ACTIONS = {
     if (el.dataset.from === 'audit') openAudit();
     if (lastAnswer && /gig/i.test(lastAnswer.q || '')) showAnswer(cmdGigReady(), lastAnswer.q);
   },
-  'gig-gen-checklist'(el) {
-    const g = gigById(el.dataset.id); if (!g) return;
-    g.checklist = (isHosting(g) ? S().hostTemplate : S().gearTemplate).filter(text => !(g.cash && /invoice/i.test(text))).map(text => ({ text, done: false }));
-    openGigs.add(g.id); commit(); toast(`Prep checklist created for ${g.venue}`);
-    if (el.dataset.from === 'audit') openAudit();
-  },
   'gig-gen-invoice'(el) { if (el.dataset.from === 'audit') closeOverlay(); generateInvoice(el.dataset.id); },
   'gig-cash-set'(el) { const g = gigById(el.dataset.id); if (!g) return; const snap = Store.snapshot(); setCash(g, true); commit(); toast(`${venueBaseName(g.venue)} marked as a cash job`, snap); if (el.dataset.from === 'audit') openAudit(); },
   'inv-settings': () => openInvoiceSettings(),
@@ -4152,8 +4120,6 @@ const ACTIONS = {
     if (isHosting(g)) S().hostTemplate = texts; else S().gearTemplate = texts;
     commit(); toast(`Saved as your standard ${isHosting(g) ? 'hosting' : 'gig'} checklist`, snap);
   },
-  'gig-check'(el) { const g = gigById(el.dataset.id); const c = g.checklist[+el.dataset.i]; c.done = !c.done; commit(); },
-  'gig-setlist'() {},
   'gig-invoice'(el) {
     const g = gigById(el.dataset.id); if (!g) return; g.reviewPending = false;
     g.invoiced = !g.invoiced; g.invoicedAt = g.invoiced ? D.today() : null; if (!g.invoiced) g.paid = false;
@@ -4185,7 +4151,6 @@ const ACTIONS = {
   },
   'termprep-toggle'(el) { const l = termPrepList(el.dataset.id); const c = l[+el.dataset.i]; c.done = !c.done; commit(); },
   'tt-remove'(el) { S().timetable = S().timetable.filter(c => c.id !== el.dataset.id); commit(); },
-  'gig-card'(el) { openGigs.add(el.dataset.id); render(); },
   'tile-arrange'() { arranging = !arranging; render(); },
   'tile-reset'() { const st = S(); if (st.settings.tiles) delete st.settings.tiles[VIEW]; Store.save(); render(); toast('Layout reset for this page'); },
   'tile-move'(el) { const lay = tileLayout(), order = tileOrderNow(), i = order.indexOf(el.dataset.k), j = i + +el.dataset.d; if (i < 0 || j < 0 || j >= order.length) return; [order[i], order[j]] = [order[j], order[i]]; lay.order = order; Store.save(); render(); },
@@ -4225,7 +4190,7 @@ const ACTIONS = {
   'gigs-all'(el) { const on = el.dataset.open === '1'; upcomingGigs().forEach(g => on ? openGigs.set().add(g.id) : openGigs.set().delete(g.id)); openGigs.save(); S().settings.open_gig = on ? [...new Set(upcomingGigs().map(g => g.date.slice(0, 7)))] : []; Store.save(); render(); },
   'cal-open': () => openCalModal(),
   'cal-connect': () => { if (!Cal.available) { openCalModal(); return; } if (!$('#cal-modal')) openCalModal(); Cal.connect(); },
-  'sync-now'() { Sync.push().then(() => Sync.pull('manual')).then(() => { refreshCalModal(); toast(Sync.error || 'Synced'); }); },
+  'sync-now'() { Sync.push().then(() => Sync.pull('manual')).catch(() => {}).then(() => { refreshCalModal(); toast(Sync.error || 'Synced'); }); },
   'cal-sync': () => Cal.available ? Cal.sync() : Feed.sync(true),
   'feed-save'() {
     const v = cleanFeedUrl($('#feed-url')?.value);
@@ -4251,12 +4216,9 @@ const ACTIONS = {
     catch (e) { const ta = $('#inv-body'); ta.focus(); ta.select(); el.textContent = 'Text selected, press Ctrl+C'; }
   },
   'song-cycle'(el) { const s = songById(el.dataset.id); const order = ['learning', 'rehearsing', 'ready']; s.status = order[(order.indexOf(s.status) + 1) % 3]; s.progress = { learning: 30, rehearsing: 70, ready: 100 }[s.status]; commit(); },
-  'song-delete'(el) { const snap = Store.snapshot(); const id = el.dataset.id; S().songs = S().songs.filter(s => s.id !== id); S().setlists.forEach(sl => sl.songIds = sl.songIds.filter(x => x !== id)); commit(); toast('Song removed', snap); },
   'setlist-new'() { const sl = { id: uid('sl'), name: `New setlist ${S().setlists.length + 1}`, songIds: [], markers: [] }; S().setlists.push(sl); activeSetlist = sl.id; musicTab = 'setlists'; commit(); setTimeout(() => { const i = $('[data-form=sl-rename] input'); if (i) { i.focus(); i.select(); } }, 0); },
   'sl-move'(el) { const sl = setlistById(activeSetlist), i = +el.dataset.i, j = i + +el.dataset.d; if (j < 0 || j >= sl.songIds.length) return; [sl.songIds[i], sl.songIds[j]] = [sl.songIds[j], sl.songIds[i]]; commit(); },
   'sl-remove'(el) { const sl = setlistById(activeSetlist), i = +el.dataset.i; sl.songIds.splice(i, 1); (sl.markers || []).forEach(m => { if (m.at > i) m.at--; }); commit(); },
-  'gear-remove'(el) { S().gearTemplate.splice(+el.dataset.i, 1); commit(); },
-  // Teaching
   'unit-step'(el) { const u = S().units.find(u => u.id === el.dataset.id); u.planned = Math.max(0, Math.min(u.total, u.planned + +el.dataset.d)); u.lastActivity = D.today(); commit(); },
   // Fitness
   'goal-toggle'(el) { const g = S().fitness.goals.find(g => g.id === el.dataset.id); g.done = !g.done; commit(); },
@@ -4286,12 +4248,6 @@ const ACTIONS = {
     catch (e) { toast('Couldn’t save the backup here.'); }
   },
   import() { $('#import-file').click(); },
-  reset() {
-    if (!confirm('Replace everything with the sample data? This clears your own entries.')) return;
-    const cal = S().calendar; Store.state = migrate(makeSampleData()); Store.state.calendar = cal;
-    syncCalendarItems(); syncAllGigs();
-    preview = null; focus = null; commit(); toast('Sample data restored');
-  }
 };
 
 function splitDump(txt) {
@@ -4324,6 +4280,7 @@ function handleAsk(q) {
 }
 
 /* ---------- Event wiring ---------- */
+window.addEventListener('unhandledrejection', e => { if (e.reason && (e.reason.kind || e.reason.code)) e.preventDefault(); });
 function boot() {
   try { const th = localStorage.getItem('mitch-dashboard-theme'); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
   Store.load();
@@ -4423,12 +4380,6 @@ function boot() {
       const wasCash = !!v.cash; v.cash = f.elements.cash.checked;
       if (v.cash && !wasCash) upcomingGigs().filter(g => venueKey(g.venue) === k && g.cash == null).forEach(g => setCash(g, true));
       closeOverlay(); commit(); toast(`${v.name} saved`);
-    } else if (kind === 'song') { if (!val('title')) return; st.songs.push({ id: uid('song'), title: cap(val('title')), artist: val('artist'), status: 'learning', progress: 0, addedAt: D.today() }); commit(); }
-    else if (kind === 'gear') { if (!val('t')) return; st.gearTemplate.push(cap(val('t'))); commit(); }
-    else if (kind === 'gig-task') {
-      if (!val('t')) return; const g = gigById(f.dataset.id);
-      const p = parseThought(val('t'), { forceCategory: 'music' }); p.gigId = g.id; if (!p.due) p.due = D.diff(D.add(g.date, -1)) >= 0 ? D.add(g.date, -1) : D.today();
-      fileItem(p); commit();
     }
     else if (kind === 'unit') { if (!val('name')) return; st.units.push({ id: uid('u'), name: cap(val('name')), planned: 0, total: +val('total') || 8, lastActivity: D.today() }); commit(); }
     else if (kind === 'shop') { if (!val('t')) return; st.tasks.push({ id: uid('t'), title: cap(val('t')), category: scoreCats(val('t').toLowerCase(), ['music', 'health', 'teaching', 'personal']) || 'home', type: 'shopping', due: null, time: null, priority: 3, estimate: 5, notes: '', status: 'todo', createdAt: D.today(), doneAt: null, gigId: null, projectId: null, snoozed: null }); commit(); setTimeout(() => $('[data-form=shop] input')?.focus(), 0); }
@@ -4457,7 +4408,6 @@ function boot() {
     }
     const kind = el.dataset.change;
     if (kind === 'setlist-pick') { activeSetlist = el.value; render(); }
-    else if (kind === 'sl-add' && el.value) { setlistById(activeSetlist).songIds.push(el.value); commit(); }
     else if (kind === 'venues-fy') { S().settings.venuesFY = +el.value; Store.save(); render(); }
     else if (kind === 'exp-fy') { expFY = +el.value; openExpensesList(); }
     else if (kind === 'gig-cash') { const g = gigById(el.dataset.id); if (g) { const snap = Store.snapshot(); setCash(g, el.checked); commit(); toast(el.checked ? `${venueBaseName(g.venue)}: cash job, no invoice needed` : `${venueBaseName(g.venue)}: needs an invoice`, snap); } }
