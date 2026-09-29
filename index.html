@@ -651,7 +651,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
   .btbl.bsec tr.tot td:nth-child(2)::before{content:'Budget'}.btbl.bsec tr.tot td:nth-child(4)::before{content:'Transferred'}.btbl.bsec tr.tot td:nth-child(5)::before{content:'Used'}
 }
 
-.row-del{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:4px 6px;border-radius:8px;margin-left:2px;opacity:0;transition:opacity .15s}
+.row-del{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:4px 6px;border-radius:8px;margin-left:2px;opacity:.45;transition:opacity .15s}
 .row:hover .row-del,.row:focus-within .row-del{opacity:1}
 .row-del:hover{color:var(--danger);background:var(--danger-soft)}
 @media (hover:none){.row-del{opacity:.55}}
@@ -673,6 +673,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .pie-legend b{font-variant-numeric:tabular-nums}.pie-legend em{font-style:normal;color:var(--muted);text-align:right;font-size:13px}
 .tbl tr.fy-row td{background:var(--surface-2)}
 .week .rest i{background:repeating-linear-gradient(45deg,var(--surface-2) 0 4px,color-mix(in srgb,var(--c-health) 30%,var(--surface)) 4px 8px);border:1px solid color-mix(in srgb,var(--c-health) 40%,transparent)}
+.fy-head{padding:4px 0;font-size:14.5px}
+.tbl tr.fy-row td{vertical-align:middle}
 </style>
 </head>
 <body>
@@ -1690,11 +1692,18 @@ function termStart() {
   return null;
 }
 const BACK_TO_SCHOOL = ['Check the timetable and any room changes', 'Plan week 1 lessons', 'Print or upload week 1 resources', 'Read staff emails and notices', 'Set up rolls and markbooks', 'Check instruments and classroom gear'];
-function termPrepList(start) {
-  const st = S();
-  if (!st.termPrep[start]) st.termPrep[start] = BACK_TO_SCHOOL.map(text => ({ text, done: false }));
-  return st.termPrep[start];
+/** Back-to-school jobs are ordinary tasks (tick, delete, open for steps), made once per term. */
+function termPrepTasks(start) {
+  const st = S(); st.termPrepMade = st.termPrepMade || {};
+  if (!st.termPrepMade[start]) {
+    const old = st.termPrep[start] || BACK_TO_SCHOOL.map(text => ({ text, done: false }));
+    old.forEach(x => st.tasks.push({ id: uid('t'), title: x.text, category: 'teaching', type: 'task', due: D.add(start, -1), time: null, priority: 2, estimate: 20, notes: '',
+      status: x.done ? 'done' : 'todo', createdAt: D.today(), doneAt: x.done ? D.today() : null, gigId: null, projectId: null, snoozed: null, termPrep: start }));
+    st.termPrepMade[start] = true; Store.save();
+  }
+  return st.tasks.filter(t => t.termPrep === start);
 }
+function termPrepList(start) { return termPrepTasks(start).map(t => ({ text: t.title, done: t.status === 'done' })); }
 /** Weekly timetable classes on a given day (only on school days). */
 const classesOn = day => isSchoolDay(day) ? S().timetable.filter(c => c.day === D.dow(day)).slice().sort((a, b) => a.time.localeCompare(b.time)) : [];
 function todaysCommitments(day) {
@@ -2875,32 +2884,21 @@ function viewTeaching() {
   const todo = open.filter(t => t.status === 'todo');
   const of = type => todo.filter(t => t.type === type).sort(sortByDue);
   const classes = todo.filter(t => t.type === 'class' && D.diff(t.due) >= 0).sort(sortByDue);
-  const other = todo.filter(t => !['lesson', 'assessment', 'resource', 'class'].includes(t.type)).sort(sortByDue);
-  const done = open.filter(t => t.status === 'done').slice(-4).reverse();
+  const ts = termStart();
+  const toDo = todo.filter(t => !['assessment', 'class'].includes(t.type) && !(ts && t.termPrep === ts)).sort(sortByDue);
+  const done = open.filter(t => t.status === 'done' && !(ts && t.termPrep === ts)).slice(-4).reverse();
+  const prep = ts ? termPrepTasks(ts).slice().sort((a, b) => (a.status === 'done') - (b.status === 'done')) : [];
   return `
-  <div class="vhead"><div><h1>Teaching</h1><p>Lessons to plan, marking, resources and units of work.</p></div></div>
+  <div class="vhead"><div><h1>Teaching</h1><p>Classes, marking and teaching to-dos.</p></div></div>
   ${teachPanel()}
   ${quickAdd('teaching', 'Tell me what you need, e.g. Need a Year 10 lesson on songwriting by Thursday')}
-  ${(() => {
-    const ts = termStart(); if (!ts) return '';
-    const l = termPrepList(ts), done = l.filter(x => x.done).length;
-    return `<section class="panel" style="margin-bottom:18px"><h2>Back to school <span class="sub">first day ${D.label(ts)}, ${D.rel(ts)}. ${done} of ${l.length} done</span></h2>
-      <ul class="rows">${l.map((c, i) => `<li class="row ${c.done ? 'is-done' : ''}"><button class="check" data-action="termprep-toggle" data-id="${ts}" data-i="${i}" aria-label="Toggle ${esc(c.text)}"></button><div class="row-main"><span class="row-title" style="cursor:default">${esc(c.text)}</span></div></li>`).join('')}</ul></section>`;
-  })()}
-    <section class="panel"><h2>Weekly timetable</h2>${timetableGrid()}</section>
-  <div class="grid g-now">
-    <section class="panel"><h2>Units of work</h2>
-      ${st.units.map(u => { const p = Math.round(u.planned / u.total * 100); const idle = -D.diff(u.lastActivity); return `<div class="unit"><div class="unit-top"><b>${esc(u.name)}</b><span class="muted">${u.planned} of ${u.total} lessons planned</span></div><div class="bar ${p < 35 ? 'low' : p < 65 ? 'mid' : ''}"><span style="width:${p}%"></span></div><div class="row-meta" style="justify-content:space-between;margin-top:6px"><span>${idle >= 14 ? `<span class="pri">Untouched for ${idle} days</span>` : `Last worked on ${D.rel(u.lastActivity)}`}</span><span class="mini"><button data-action="unit-step" data-id="${u.id}" data-d="-1" aria-label="One fewer lesson planned">−</button><button data-action="unit-step" data-id="${u.id}" data-d="1" aria-label="One more lesson planned">+</button></span></div></div>`; }).join('')}
-      <form class="inline-form" data-form="unit" style="margin-top:14px"><input class="input" name="name" placeholder="New unit, e.g. Year 7 Instruments of the Orchestra" aria-label="New unit name"><input class="input" name="total" type="number" min="1" max="40" value="8" style="max-width:80px" aria-label="Number of lessons"><button class="btn small" type="submit">Add unit</button></form>
-    </section>
-    <section class="panel"><h2>Other classes and commitments</h2>${calCommitRows(e => e.category === 'teaching', 21)}${classes.length || calCommitCount(e => e.category === 'teaching', 21) ? '' : ''}${classes.length ? `<ul class="rows">${classes.map(t => `<li class="row"><div class="row-main"><button class="row-title" data-action="open-task" data-id="${t.id}">${taskColor(t) ? `<i class="cdot" style="background:${taskColor(t)}"></i>` : ''}${esc(t.title)}</button><div class="row-meta"><span>${D.label(t.due)}${t.time ? ', ' + D.time(t.time) : ''}</span></div></div></li>`).join('')}</ul>` : (calCommitCount(e => e.category === 'teaching', 21) ? '' : '<p class="empty">Nothing scheduled. School events in your calendar land here automatically, or add one like "Year 7 Music period 3 Tuesday 10:30am".</p>')}</section>
-  </div>
-  <div class="grid g-3 section-gap">
-    <section class="panel"><h2>Lessons to plan</h2>${rows(of('lesson'), { noCat: true, est: true }, 'No lessons waiting to be planned.')}</section>
+  ${prep.length ? `<section class="panel"><h2>Back to school</h2>${rows(prep, { noCat: true, noDue: true })}</section>` : ''}
+  <section class="panel"><h2>Weekly timetable</h2>${timetableGrid()}</section>
+  <div class="grid g-2 section-gap">
     <section class="panel"><h2>Assessments and marking</h2>${of('assessment').length ? of('assessment').map(markingRow).join('') : '<p class="empty">No marking on the list.</p>'}</section>
-    <section class="panel"><h2>Resources to create</h2>${rows(of('resource'), { noCat: true, est: true }, 'No resources waiting.')}</section>
+    <section class="panel"><h2>To do</h2>${rows(toDo, { noCat: true, showType: true, est: true }, 'Nothing on the list. Add something in the box above.')}</section>
   </div>
-  ${other.length ? `<section class="panel section-gap"><h2>Other teaching tasks</h2>${rows(other, { noCat: true, showType: true })}</section>` : ''}
+  <section class="panel section-gap"><h2>Other classes and commitments</h2>${calCommitRows(e => e.category === 'teaching', 21)}${classes.length ? rows(classes, { noCat: true }) : calCommitCount(e => e.category === 'teaching', 21) ? '' : '<p class="empty">Nothing coming up.</p>'}</section>
   ${done.length ? `<section class="panel section-gap plain" style="background:transparent"><h2>Recently finished</h2>${rows(done, { noCat: true })}</section>` : ''}`;
 }
 
@@ -4281,8 +4279,9 @@ function viewBudget() {
   <section class="panel"><h2>All fortnights</h2>
     <div class="scroll-x"><table class="tbl"><thead><tr><th>Fortnight</th><th class="num">Income</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">Remaining</th></tr></thead><tbody>
     ${[...new Set(fns.map(f => fyOfDate(f.start)))].sort((a, b) => b - a).map(y => { const list = fns.filter(f => fyOfDate(f.start) === y).reverse(), sum = k => list.reduce((a, f) => a + budTotals(f)[k], 0);
-      return `<tr class="fy-row"><td><b>${fyRange(y).label} financial year</b> <span class="muted">${plural(list.length, 'fortnight')}</span></td><td class="num"><b>${money2(sum('income'))}</b></td><td class="num"><b>${money2(sum('allocated'))}</b></td><td class="num"><b>${money2(sum('spent'))}</b></td><td class="num"><b>${money2(sum('remaining'))}</b></td></tr>`
-        + list.map(f => { const x = budTotals(f); return `<tr class="${f.id === fn.id ? 'is-cur' : ''}"><td><button class="linkbtn" data-action="bud-open" data-id="${f.id}">${fnLabel(f)}</button></td><td class="num">${money2(x.income)}</td><td class="num">${money2(x.allocated)}</td><td class="num">${money2(x.spent)}</td><td class="num ${x.remaining < -0.004 ? 'pri' : 'ok-t'}">${money2(x.remaining)}</td></tr>`; }).join(''); }).join('')}
+      const openFY = (S().settings.open_budfy || [fyOfDate(D.today())]).includes(y);
+      return `<tr class="fy-row"><td><button class="month-head fy-head" data-action="bud-fy" data-y="${y}" aria-expanded="${openFY}"><span class="chev-s ${openFY ? 'open' : ''}" aria-hidden="true"></span><b>${fyRange(y).label} financial year</b> <span class="muted">${plural(list.length, 'fortnight')}</span></button></td><td class="num"><b>${money2(sum('income'))}</b></td><td class="num"><b>${money2(sum('allocated'))}</b></td><td class="num"><b>${money2(sum('spent'))}</b></td><td class="num"><b>${money2(sum('remaining'))}</b></td></tr>`
+        + (!openFY ? '' : list.map(f => { const x = budTotals(f); return `<tr class="${f.id === fn.id ? 'is-cur' : ''}"><td><button class="linkbtn" data-action="bud-open" data-id="${f.id}">${fnLabel(f)}</button></td><td class="num">${money2(x.income)}</td><td class="num">${money2(x.allocated)}</td><td class="num">${money2(x.spent)}</td><td class="num ${x.remaining < -0.004 ? 'pri' : 'ok-t'}">${money2(x.remaining)}</td></tr>`; }).join('')); }).join('')}
     </tbody></table></div>
   </section>`;
 }
@@ -4840,7 +4839,7 @@ const ACTIONS = {
     st.tasks.push(t); st.calReminders[e.id] = t.id; commit(); toast(`Reminder set for ${Math.abs(D.diff(due)) <= 1 ? D.label(due).toLowerCase() : D.label(due)}`);
     if (el.dataset.from === 'audit') openAudit();
   },
-  'termprep-toggle'(el) { const l = termPrepList(el.dataset.id); const c = l[+el.dataset.i]; c.done = !c.done; commit(); },
+  'termprep-toggle'(el) { const t = termPrepTasks(el.dataset.id)[+el.dataset.i]; if (t) { t.status = t.status === 'done' ? 'todo' : 'done'; t.doneAt = t.status === 'done' ? D.today() : null; commit(); } },
   'tt-remove'(el) { const snap = Store.snapshot(); S().timetable = S().timetable.filter(c => c.id !== el.dataset.id); closeOverlay(); commit(); toast('Class removed', snap); },
   'tt-new'() { openTTEditor({ day: Math.min(5, Math.max(1, new Date().getDay())), time: '09:00', end: '10:00' }); },
   'tt-dup'(el) { const c = S().timetable.find(x => x.id === el.dataset.id); if (!c) return; closeOverlay(); openTTEditor({ day: c.day === 5 ? 1 : c.day + 1, time: c.time, end: c.end }); if (ttEdit) { ttEdit.title = c.title; ttEdit.color = c.color; const f = $('form[data-form=tt-block]'); if (f) { f.elements.title.value = c.title; [...f.elements.color].forEach(r => { r.checked = r.value === c.color; }); } } },
@@ -4903,6 +4902,7 @@ const ACTIONS = {
   },
   'bud-export-go'(el) { closeOverlay(); exportBudget(el.dataset.s); },
   'bud-note'(el) { openBudNote(el.dataset.id); },
+  'bud-fy'(el) { const st = S(), y = +el.dataset.y, s = st.settings.open_budfy || (st.settings.open_budfy = [fyOfDate(D.today())]), i = s.indexOf(y); if (i >= 0) s.splice(i, 1); else s.push(y); Store.save(); render(); },
   'bud-chart'(el) { budChartPeriod = el.dataset.p; render(); },
   'mark-t'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; const i = +el.dataset.i, d = t.marking.done || (t.marking.done = []); const k = d.indexOf(i); if (k >= 0) d.splice(k, 1); else d.push(i); Store.save(); render(); refreshTaskExtras(t.id); if (d.length === t.marking.total) toast(`All ${t.marking.total} marked for ${t.title}`); },
   'mark-add'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; t.marking.total = Math.max(1, Math.min(400, t.marking.total + +el.dataset.d)); t.marking.done = (t.marking.done || []).filter(i => i < t.marking.total); Store.save(); render(); refreshTaskExtras(t.id); },
