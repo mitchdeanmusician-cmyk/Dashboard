@@ -1883,7 +1883,8 @@ const Sync = {
     const st = S(), cal = st.calendar || {};
     return { ...st, calendar: { ...cal, events: {}, syncedAt: {} }, settings: { ...st.settings, apiKey: undefined } };
   },
-  errorText(kind) {
+  errorText(kind, msg) {
+    if (kind === 'script') return `The script had a problem saving: ${msg || 'unknown error'}`;
     return kind === 'key' ? 'Sync: the key in your calendar link wasn’t accepted.'
       : kind === 'old_script' ? 'Update your calendar script to turn on syncing between devices.'
       : 'Couldn’t reach the sync just now. Changes are kept on this device and will sync when it’s back.';
@@ -1893,6 +1894,7 @@ const Sync = {
     const res = await fetch(url, body ? { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, credentials: 'omit', redirect: 'follow' } : { cache: 'no-store', credentials: 'omit', redirect: 'follow' });
     const d = await res.json();
     if (d && d.error === 'bad_key') throw { kind: 'key' };
+    if (d && d.error === 'script_error') throw { kind: 'script', message: d.message };
     if (d && (d.error === 'no_sync' || (!('data' in d) && !('ok' in d) && !('conflict' in d)))) throw { kind: 'old_script' };
     return d;
   },
@@ -1916,7 +1918,7 @@ const Sync = {
       if (d.data && (neverSynced || ((d.rev || 0) > (meta.rev || 0) && !(this.pending && (meta.updatedAt || 0) > (d.updatedAt || 0))))) this.apply(d, false);
       else if (!d.data || this.pending) { this.busy = false; return this.push(); }
       this.lastOk = Date.now(); this.error = null;
-    } catch (e) { this.error = this.errorText(e && e.kind); }
+    } catch (e) { this.error = this.errorText(e && e.kind, e && e.message); }
     this.busy = false; renderSyncStatus();
   },
   dirty() { if (!this.enabled()) return; this.pending = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 2500); },
@@ -1935,7 +1937,7 @@ const Sync = {
       }
       st.meta = { rev: d.rev, updatedAt: meta.updatedAt }; Store.saveLocal();
       this.pending = false; this.lastOk = Date.now(); this.error = null;
-    } catch (e) { this.error = this.errorText(e && e.kind); }
+    } catch (e) { this.error = this.errorText(e && e.kind, e && e.message); }
     this.busy = false; renderSyncStatus();
   },
   start() {
