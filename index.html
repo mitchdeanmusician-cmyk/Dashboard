@@ -247,6 +247,38 @@ button.cal-ev:hover{background:var(--accent-soft)}
   .nav button{padding:8px 12px;font-size:14px}
 }
 @media (max-width:480px){.main{padding:0 12px 40px}.panel{padding:16px}.now{padding:20px 18px;border-radius:20px}.now-actions .btn{flex:1 1 auto;justify-content:center}}
+.tabbar,.fab{display:none}
+@media (max-width:860px){
+  .side{display:none}
+  .main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .prompts{display:none}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;padding:6px 0 4px;color:var(--muted);font-size:11.5px;font-weight:500;position:relative;border-radius:12px}
+  .tabbar button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar button[aria-current="page"]{color:var(--accent)}
+  .tabbar button[aria-current="page"] svg{stroke-width:2.3}
+  .tabbar .badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--danger);color:#fff;font-size:10.5px;min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+  .fab{display:grid;place-items:center;position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:41;width:58px;height:58px;border-radius:18px;border:0;background:var(--accent);color:var(--accent-ink);font-size:32px;line-height:1;box-shadow:0 8px 22px rgba(0,0,0,.25)}
+  .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+  .topbar{position:static}
+}
+.sheet-scrim{place-items:end center;padding:0}
+.sheet{background:var(--surface);color:var(--ink);width:min(560px,100%);border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow:auto;box-shadow:0 -10px 40px rgba(0,0,0,.25);animation:sheetup .18s ease-out}
+@keyframes sheetup{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:2px auto 12px}
+.sheet-item{display:flex;flex-direction:column;align-items:flex-start;width:100%;background:none;border:0;padding:13px 8px;border-radius:12px;text-align:left;font-size:17px;color:var(--ink)}
+.sheet-item:hover{background:var(--surface-2)}
+.sheet-item small{font-size:13px;color:var(--muted);margin-top:2px}
+.sheet-sep{height:1px;background:var(--line);margin:6px 8px}
+.cap-sheet h2{font-size:22px;margin:0 0 10px}
+.cap-modes{margin-bottom:10px;overflow-x:auto;flex-wrap:nowrap;max-width:100%}
+.cap-modes button{white-space:nowrap}
+#cap-text{font-size:17px;line-height:1.5;min-height:92px;resize:vertical}
+.cap-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cap-actions .btn{flex:1 1 auto;justify-content:center;padding:12px 14px;font-size:16px}
+#cap-mic.on{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+.cap-prompts{display:flex!important;flex-wrap:wrap;padding-top:12px}
+.cap-prompts button{font-size:13.5px}
 .cash-tick{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ink-2);padding:0 6px}
 .inv-cell{display:inline-flex;gap:8px;align-items:center}
 code{font-size:13px;background:var(--surface-2);padding:1px 5px;border-radius:5px}
@@ -512,6 +544,52 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
   .now{padding:22px 20px}
   .vhead h1{font-size:28px}
 }
+
+/* ---- Phone layout: kept last so it wins over the general rules above ---- */
+.scrim.sheet-scrim{place-items:end center;padding:0}
+@media (max-width:860px){
+  .prompts{display:none}
+  .arrange-box{display:none!important}
+  .scrim{padding:10px;align-items:end}
+  .scrim.sheet-scrim{padding:0}
+  .modal{padding:20px 18px;border-radius:18px;max-height:calc(100% - 10px)}
+  .vhead{margin:10px 0 14px}.vhead h1{font-size:26px}
+  .now-title{font-size:28px}
+  .brief{font-size:16px}
+  .topbar{padding:12px 0 8px;position:static}
+  .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+}
+
+/* ---- Timetable grid ---- */
+.tt-wrap{overflow-x:auto}
+.tt-grid{display:grid;grid-template-columns:52px repeat(5,minmax(110px,1fr));gap:0 6px;min-width:620px;position:relative;padding-bottom:10px}
+.tt-times{position:relative;height:var(--h);margin-top:26px}
+.tt-times span{position:absolute;right:6px;transform:translateY(-50%);font-size:12px;color:var(--muted);white-space:nowrap}
+.tt-day{height:26px;text-align:center;font-size:13px;font-weight:600;color:var(--ink-2)}
+.tt-col.is-today .tt-day{color:var(--accent)}
+.tt-slots{position:relative;background:var(--surface-2);border-radius:10px;cursor:copy;touch-action:pan-y}
+.tt-col.is-today .tt-slots{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent)}
+.tt-slots>i{position:absolute;left:0;right:0;border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent);pointer-events:none}
+.tt-now{position:absolute;left:0;right:0;border-top:2px solid var(--danger);z-index:3;pointer-events:none}
+.tt-block{position:absolute;left:4px;right:4px;border-radius:8px;padding:4px 7px;background:color-mix(in srgb,var(--c) 22%,var(--surface));border-left:4px solid var(--c);cursor:grab;overflow:hidden;z-index:2;display:flex;flex-direction:column;gap:1px;touch-action:none;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tt-block b{font-size:13px;line-height:1.2;color:var(--ink)}
+.tt-block span{font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tt-block.dragging{opacity:.85;box-shadow:0 8px 20px rgba(0,0,0,.2);cursor:grabbing;z-index:5}
+.tt-resize{position:absolute;left:0;right:0;bottom:0;height:9px;cursor:ns-resize}
+.tt-resize::after{content:"";position:absolute;left:50%;bottom:3px;width:22px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--c) 60%,transparent);transform:translateX(-50%)}
+.tt-times-in{display:flex;align-items:center;gap:8px}
+.tt-times-in .input{min-width:132px;flex:1}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch input{position:absolute;opacity:0;pointer-events:none}
+.swatch i{display:block;width:30px;height:30px;border-radius:9px;background:var(--c);cursor:pointer;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.swatch input:checked+i{outline:3px solid var(--ink);outline-offset:2px}
+.swatch input:focus-visible+i{outline:3px solid var(--accent);outline-offset:2px}
+/* ---- Sync box ---- */
+.sync-box{background:var(--surface-2);border-radius:12px;padding:8px 12px;margin:0 0 12px;display:grid;gap:4px}
+.sync-line{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:baseline;font-size:14px;padding:3px 0}
+.sync-line b{color:var(--ink-2);font-weight:600}
+.board{margin-top:14px}
+.quick{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -548,6 +626,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
     <div class="view" id="view"></div>
   </main>
 </div>
+<nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+<button class="fab" data-action="capture-open" aria-label="Capture a thought, task or expense">+</button>
+<input type="file" id="cap-photo" accept="image/*" capture="environment" hidden>
 <div id="overlay"></div>
 <div id="toast-root" aria-live="polite"></div>
 
@@ -759,7 +840,7 @@ const Store = {
     try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const s = JSON.parse(raw); if (s && s.version === 1) { this.state = migrate(s); return; } } } catch (e) {}
     this.state = migrate(makeSampleData()); this.save();
   },
-  save() { this.state.meta = { ...(this.state.meta || {}), updatedAt: Date.now() }; this.saveLocal(); if (typeof Sync !== 'undefined') Sync.dirty(); },
+  save() { this.state.meta = { ...(this.state.meta || {}), updatedAt: Date.now(), device: deviceName() }; this.saveLocal(); if (typeof Sync !== 'undefined') Sync.dirty(); },
   saveLocal() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state)); } catch (e) {} },
   snapshot() { return JSON.stringify(this.state); },
   restore(json) { this.state = JSON.parse(json); this.save(); }
@@ -1857,6 +1938,14 @@ function loadFeedViaScript(url, anonymous) {
    Drive. Each device saves changes there a few seconds after you make them and picks up the
    other device's changes when opened or switched back to. Newest change wins. Calendar events,
    receipt files and your API key stay on each device. */
+/** Each device knows what it is, so sync messages can say "your phone" or "your Mac". */
+const DEVICE_KEY = 'mitch-dashboard-device';
+function deviceName() {
+  try { const n = localStorage.getItem(DEVICE_KEY); if (n) return n; } catch (e) {}
+  const ua = navigator.userAgent || '';
+  return /Android/i.test(ua) ? 'phone' : /iPhone/i.test(ua) ? 'iPhone' : /iPad/i.test(ua) ? 'iPad' : /Macintosh|Mac OS X/i.test(ua) ? 'Mac' : /Windows/i.test(ua) ? 'PC' : 'computer';
+}
+const yourDevice = n => n ? `your ${n}` : 'your other device';
 const Sync = {
   timer: null, busy: false, pending: false, lastOk: null, error: null, started: false, checkedServer: false,
   enabled() { return location.protocol === 'https:' && Cal.checked && !Cal.available && !!Feed.url() && S().settings.syncOff !== true; },
@@ -1885,9 +1974,10 @@ const Sync = {
     next.calendar.events = keep.events || {}; next.calendar.syncedAt = keep.syncedAt || {};
     if (!next.calendar.feedUrl) next.calendar.feedUrl = keep.feedUrl;
     if (keep.apiKey) next.settings.apiKey = keep.apiKey;
-    next.meta = { rev: d.rev, updatedAt: d.updatedAt };
-    Store.state = next; Store.saveLocal(); this.pending = false;
-    render(); if (!quiet) toast('Brought in the latest changes from your other device');
+    const from = d.data && d.data.meta && d.data.meta.device;
+    next.meta = { rev: d.rev, updatedAt: d.updatedAt, device: from };
+    Store.state = next; Store.saveLocal(); this.pending = false; this.lastFrom = from; this.lastFromAt = d.updatedAt;
+    render(); if (!quiet) toast(`Brought in the latest changes from ${from && from !== deviceName() ? yourDevice(from) : 'your other device'}`);
   },
   async pull(reason) {
     if (!this.enabled() || this.busy) return;
@@ -1901,6 +1991,7 @@ const Sync = {
       this.lastOk = Date.now(); this.error = null;
     } catch (e) { this.error = this.errorText(e && e.kind, e && e.message); }
     this.busy = false; renderSyncStatus();
+    if (!this.error) FileSync.flush();
   },
   dirty() { if (!this.enabled()) return; this.pending = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.push().catch(() => {}), 2500); },
   async push(force) {
@@ -1916,7 +2007,7 @@ const Sync = {
         if (meta.rev > 0 && (meta.updatedAt || 0) > (d.updatedAt || 0)) return this.push(true);
         this.pending = false; return this.pull('conflict');
       }
-      st.meta = { rev: d.rev, updatedAt: meta.updatedAt }; Store.saveLocal();
+      st.meta = { rev: d.rev, updatedAt: meta.updatedAt, device: deviceName() }; Store.saveLocal();
       this.pending = false; this.lastOk = Date.now(); this.error = null;
     } catch (e) { this.error = this.errorText(e && e.kind, e && e.message); }
     this.busy = false; renderSyncStatus();
@@ -1931,12 +2022,52 @@ const Sync = {
     window.addEventListener('pagehide', () => { if (this.pending) quiet(this.push()); });
   }
 };
+/* ---------- Receipts and attachments through your Google Drive ----------
+   Files are kept on the device (IndexedDB) and uploaded to a "Mitch's Dashboard files" folder
+   in your Drive, so the other device can fetch them when you open one. */
+const FileSync = {
+  busy: false, error: null,
+  enabled() { return Sync.enabled(); },
+  async toB64(blob) { return await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.onerror = rej; fr.readAsDataURL(blob); }); },
+  refs() {
+    const st = S();
+    return [...st.expenses.filter(x => x.receiptId && !x.receiptCloud).map(x => ({ obj: x, id: x.receiptId, name: x.receiptName || 'receipt', flag: 'receiptCloud' })),
+      ...st.tasks.flatMap(t => (t.files || []).filter(f => !f.cloud).map(f => ({ obj: f, id: f.id, name: f.name, flag: 'cloud' })))];
+  },
+  async flush() {
+    if (!this.enabled() || this.busy) return;
+    this.busy = true;
+    for (const r of this.refs()) {
+      try {
+        const blob = await ReceiptDB.get(r.id); if (!blob) continue;   // lives on the other device
+        const d = await Sync.request('upload', { id: r.id, name: r.name, type: blob.type || 'application/octet-stream', data: await this.toB64(blob) });
+        if (!d || !d.ok) throw { kind: 'x' };
+        r.obj[r.flag] = true; Store.saveLocal(); Sync.dirty(); this.error = null;
+      } catch (e) { this.error = e && e.kind === 'old_script' ? 'Update your calendar script so receipts sync between devices.' : 'Some files haven’t uploaded yet; they’ll try again.'; break; }
+    }
+    this.busy = false;
+  },
+  /** A file from this device, or fetched from your Drive if it was added on the other one. */
+  async get(id) {
+    let blob = await ReceiptDB.get(id).catch(() => null);
+    if (blob) return blob;
+    if (!this.enabled()) return null;
+    try {
+      const d = await Sync.request('file&id=' + encodeURIComponent(id));
+      if (!d || !d.data) return null;
+      blob = new Blob([b64ToBytes(d.data)], { type: d.type || 'application/octet-stream' });
+      ReceiptDB.put(id, blob).catch(() => {});
+      return blob;
+    } catch (e) { return null; }
+  },
+  trash(id) { if (this.enabled()) Sync.request('trashfile&id=' + encodeURIComponent(id)).catch(() => {}); }
+};
 function renderSyncStatus() {
   const el = $('#sync-status'); if (!el) return;
   const on = Sync.enabled();
   el.hidden = !on && location.protocol !== 'https:';
   el.classList.toggle('on', on && !Sync.error);
-  el.lastElementChild.textContent = !on ? (location.protocol === 'https:' ? 'Sync: add your calendar link' : '') : Sync.error ? 'Sync needs attention' : Sync.pending ? 'Saving to your other devices…' : Sync.lastOk ? `Synced ${agoText(Sync.lastOk)}` : 'Syncing…';
+  el.lastElementChild.textContent = !on ? (location.protocol === 'https:' ? 'Sync: add your calendar link' : '') : Sync.error ? 'Sync needs attention' : Sync.pending ? `This ${deviceName()}: saving…` : Sync.lastOk ? `This ${deviceName()}: synced ${agoText(Sync.lastOk)}` : `This ${deviceName()}: syncing…`;
   el.title = Sync.error || 'Keeps this dashboard the same on your phone and computer';
 }
 const FEED_SCRIPT_HINT = 'mitchs-dashboard-calendar-feed.gs';
@@ -2127,7 +2258,7 @@ function teachPanel() {
     <div class="teach-log" id="teach-log">
       ${log.length ? log.map((m, mi) => m.role === 'user' ? `<div class="msg me">${esc(m.text)}</div>`
         : `<div class="msg ai">${formatClaude(m.text)}${(m.ideas || []).length ? `<div class="idea-grid">${m.ideas.map((i, ii) => ideaCard(i, mi, ii)).join('')}</div>` : ''}</div>`).join('')
-        : '<p class="empty" style="margin:0">Ask for a lesson idea, a warm-up, a way to handle a tricky class, or help planning a unit. Type or press Speak.</p>'}
+        : ''}
       ${teachBusy ? '<div class="msg ai thinking">Thinking…</div>' : ''}
     </div>
     <form class="teach-form" data-form="teach" autocomplete="off">
@@ -2226,13 +2357,15 @@ function renderCalStatus() {
 function renderPrompts() { $('#prompts').innerHTML = COMMANDS.map(c => `<button data-action="ask" data-q="${esc(c)}">${esc(c)}</button>`).join(''); }
 
 /** Every tile can be folded away by clicking its heading. Remembered per page and tile. */
-const TIDY_VIEWS = ['music'];
+const TIDY_VIEWS = ['today', 'inbox', 'teaching', 'music', 'life', 'fitness', 'someday'];
 function makePanelsCollapsible() {
   const st = S(), col = st.settings.collapsed || (st.settings.collapsed = {});
   document.querySelectorAll('#view section.panel, #view section.now').forEach(sec => {
     const h2 = sec.querySelector('h2'); if (!h2 || sec.dataset.fold) return;
     const label = [...h2.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim(); if (!label) return;
     const key = VIEW + ':' + label;
+    const custom = (st.settings.tileNames || {})[key];
+    if (custom) { [...h2.childNodes].filter(n => n.nodeType === 3).forEach((n, i) => { n.textContent = i ? '' : custom; }); }
     let head = h2; while (head.parentElement && head.parentElement !== sec) head = head.parentElement;
     const body = document.createElement('div'); body.className = 'panel-body';
     let n = head.nextSibling; while (n) { const next = n.nextSibling; body.appendChild(n); n = next; }
@@ -2240,7 +2373,7 @@ function makePanelsCollapsible() {
     if (TIDY_VIEWS.includes(VIEW)) {
       // Heading row holds only the title and the fold arrow; notes and buttons move into the tile.
       const lead = document.createElement('div'); lead.className = 'panel-lead';
-      h2.querySelectorAll('.sub').forEach(s => { const t = s.textContent.trim(); s.remove(); if (t) { const pEl = document.createElement('p'); pEl.className = 'panel-note'; pEl.textContent = t; lead.appendChild(pEl); } });
+      h2.querySelectorAll('.sub').forEach(s => s.remove());   // headings show just the name
       if (head !== h2) [...head.children].filter(c => c !== h2).forEach(c => lead.appendChild(c));
       if (lead.childNodes.length) body.insertBefore(lead, body.firstChild);
       head.classList.add('tidy-head');
@@ -2274,13 +2407,14 @@ function arrangeTiles() {
     if (arranging) {
       s.draggable = true;
       const bar = document.createElement('div'); bar.className = 'tile-bar';
-      bar.innerHTML = `<span class="grip" aria-hidden="true">⠿ Drag</span>
+      bar.innerHTML = `<span class="grip" aria-hidden="true">⠿ Drag</span><button class="linkbtn" data-action="tile-rename" data-k="${esc(s.dataset.tkey)}">Rename</button>
         <span class="mini"><button data-action="tile-move" data-k="${esc(s.dataset.tkey)}" data-d="-1" aria-label="Move earlier">←</button><button data-action="tile-move" data-k="${esc(s.dataset.tkey)}" data-d="1" aria-label="Move later">→</button></span>
         <span class="seg">${TILE_SPANS.map(([n, l]) => `<button class="${span === n ? 'on' : ''}" data-action="tile-span" data-k="${esc(s.dataset.tkey)}" data-n="${n}">${l}</button>`).join('')}</span>`;
       s.insertBefore(bar, s.firstChild);
     }
   });
   view.querySelectorAll(':scope > .grid').forEach(g => { if (!g.children.length) g.remove(); });
+  view.querySelectorAll(':scope > form.quick').forEach(f => view.insertBefore(f, board));
   // the Arrange button lives in each page's heading
   const vh = view.querySelector('.vhead');
   if (vh && !vh.querySelector('[data-action=tile-arrange]')) {
@@ -2296,7 +2430,7 @@ function viewBusy() { const a = document.activeElement; return !!(a && $('#view'
 function safeRender() { if (viewBusy()) { pendingRender = true; return; } pendingRender = false; render(); }
 function render() {
   const dumpVal = $('#dump')?.value;
-  renderNav(); renderCalStatus(); renderSyncStatus();
+  renderNav(); renderCalStatus(); renderSyncStatus(); renderTabbar();
   const v = { today: viewToday, inbox: viewInbox, teaching: viewTeaching, music: viewMusic, life: viewLife, fitness: viewFitness, someday: viewSomeday }[VIEW];
   $('#view').innerHTML = v();
   if (dumpVal && $('#dump')) $('#dump').value = dumpVal;
@@ -2354,7 +2488,7 @@ function viewToday() {
     nowHtml = `<section class="now"><div class="now-top"><h2>What to work on right now</h2></div><p class="now-title">You're clear.</p><p class="now-why">Nothing is pressing and every song is gig-ready. Move your body, or pick a Someday idea.</p><div class="now-actions"><button class="btn primary" data-action="nav" data-view="someday">Browse Someday</button></div></section>`;
   }
 
-  const calToday = calEventsOn(T).filter(e => !(evKind(e) === 'bill' && st.calPaid[e.id])).map(e => ({ ...e, color: evColor(e) })).concat(st.gigs.filter(x => x.date === T).map(x => ({ color: gigColor(x), time: x.time, allDay: false, title: `Gig: ${x.venue}`, cal: feeText(x) })), classesOn(T).map(c => ({ time: c.time, allDay: false, title: c.title, cal: c.end ? `Class until ${D.time(c.end)}` : 'Class' })))
+  const calToday = calEventsOn(T).filter(e => !(evKind(e) === 'bill' && st.calPaid[e.id])).map(e => ({ ...e, color: evColor(e) })).concat(st.gigs.filter(x => x.date === T).map(x => ({ color: gigColor(x), time: x.time, allDay: false, title: `Gig: ${x.venue}`, cal: feeText(x) })), classesOn(T).map(c => ({ color: c.color, time: c.time, allDay: false, title: c.title, cal: c.end ? `Class until ${D.time(c.end)}` : 'Class' })))
     .sort((a, b) => (a.allDay ? '00' : a.time).localeCompare(b.allDay ? '00' : b.time));
   // Today & overdue
   const todayList = [...overdue.sort(sortByDue), ...open.filter(t => t.due === T && t.type !== 'birthday' && !overdue.includes(t)).sort(sortByDue)];
@@ -2491,6 +2625,96 @@ function previewHtml() {
 }
 
 /* --- Teaching --- */
+/* ---------- Weekly timetable: blocks on a grid you can add, colour, drag and resize ---------- */
+const TT_COLOURS = ['#4F68A6', '#86579A', '#2B7B82', '#3A8660', '#B7791F', '#C2410C', '#A33232', '#6B7280'];
+const toMin = t => { const [a, b] = String(t || '0:0').split(':').map(Number); return a * 60 + (b || 0); };
+const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const TT_PX = 1.15;   // pixels per minute
+function ttRange() {
+  const tt = S().timetable; let lo = 8 * 60, hi = 15 * 60 + 30;
+  tt.forEach(c => { lo = Math.min(lo, toMin(c.time)); hi = Math.max(hi, toMin(c.end || toHM(toMin(c.time) + 60))); });
+  return { lo: Math.floor(lo / 60) * 60, hi: Math.ceil(hi / 60) * 60 };
+}
+function timetableGrid() {
+  const tt = S().timetable, { lo, hi } = ttRange(), H = (hi - lo) * TT_PX, today = new Date().getDay(), nowM = new Date().getHours() * 60 + new Date().getMinutes();
+  const hours = []; for (let m = lo; m <= hi; m += 60) hours.push(m);
+  const block = c => {
+    const s = toMin(c.time), e = toMin(c.end || toHM(s + 60)), col = c.color || TT_COLOURS[0];
+    return `<div class="tt-block" data-tt="${c.id}" style="top:${(s - lo) * TT_PX}px;height:${Math.max(18, (e - s) * TT_PX)}px;--c:${col}" title="${esc(c.title)}, ${D.time(c.time)} to ${D.time(toHM(e))}">
+      <b>${esc(c.title)}</b><span>${D.time(c.time)}–${D.time(toHM(e))}</span><i class="tt-resize" aria-hidden="true"></i></div>`;
+  };
+  return `<div class="tt-wrap"><div class="tt-grid" style="--h:${H}px">
+    <div class="tt-times">${hours.map(m => `<span style="top:${(m - lo) * TT_PX}px">${D.time(toHM(m))}</span>`).join('')}</div>
+    ${[1, 2, 3, 4, 5].map(d => `<div class="tt-col ${d === today ? 'is-today' : ''}" data-day="${d}"><div class="tt-day">${['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][d]}</div>
+      <div class="tt-slots" data-day="${d}" style="height:${H}px">${hours.slice(0, -1).map(m => `<i style="top:${(m - lo) * TT_PX}px"></i>`).join('')}
+        ${d === today && nowM > lo && nowM < hi ? `<em class="tt-now" style="top:${(nowM - lo) * TT_PX}px"></em>` : ''}
+        ${tt.filter(c => c.day === d).map(block).join('')}</div></div>`).join('')}
+  </div></div>
+  <div class="inline-form" style="margin-top:10px"><button class="btn small" data-action="tt-new">Add a class</button></div>`;
+}
+let ttEdit = null;
+function openTTEditor(opts) {
+  const c = opts.id ? S().timetable.find(x => x.id === opts.id) : null;
+  ttEdit = c ? { ...c, end: c.end || toHM(toMin(c.time) + 60) } : { id: null, day: opts.day || 1, time: opts.time || '09:00', end: opts.end || toHM(toMin(opts.time || '09:00') + 60), title: '', color: TT_COLOURS[0] };
+  const e = ttEdit;
+  $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="tt-title">
+    <div class="modal-head"><h2 id="tt-title">${c ? 'Edit class' : 'Add a class'}</h2><button class="btn small ghost" data-action="close">Close</button></div>
+    <form class="form-grid" data-form="tt-block">
+      <label class="field full">Class<input class="input" name="title" value="${esc(e.title)}" placeholder="e.g. Year 10 Music" required></label>
+      <label class="field">Day<select class="input" name="day">${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((d, i) => `<option value="${i + 1}" ${e.day === i + 1 ? 'selected' : ''}>${d}</option>`).join('')}</select></label>
+      <div class="field"><span>Time</span><div class="tt-times-in"><input class="input" type="time" name="time" value="${e.time}" aria-label="Start time" step="300"><span>to</span><input class="input" type="time" name="end" value="${e.end}" aria-label="Finish time" step="300"></div></div>
+      <div class="field full"><span>Colour</span><div class="swatches">${TT_COLOURS.map(col => `<label class="swatch" style="--c:${col}"><input type="radio" name="color" value="${col}" ${e.color === col ? 'checked' : ''}><i></i></label>`).join('')}</div></div>
+      <div class="modal-foot full"><button class="btn primary" type="submit">${c ? 'Save' : 'Add'}</button>${c ? `<div class="inline-form"><button class="btn ghost" type="button" data-action="tt-dup" data-id="${c.id}">Copy to another day</button><button class="btn ghost danger-link" type="button" data-action="tt-remove" data-id="${c.id}">Delete</button></div>` : ''}</div>
+    </form></div></div>`;
+  setTimeout(() => $('#overlay input[name=title]')?.focus(), 0);
+}
+/* dragging blocks (mouse or finger) */
+let ttDrag = null;
+function ttPointerDown(ev) {
+  const b = ev.target.closest && ev.target.closest('.tt-block');
+  const slots = ev.target.closest && ev.target.closest('.tt-slots');
+  if (!slots || arranging) return;
+  if (!b) return;   // empty spots are handled as a tap (see ttClick) so scrolling doesn't open the form
+  const c = S().timetable.find(x => x.id === b.dataset.tt); if (!c) return;
+  ev.preventDefault();
+  ttDrag = { id: c.id, el: b, resize: !!ev.target.closest('.tt-resize'), x0: ev.clientX, y0: ev.clientY, s: toMin(c.time), e: toMin(c.end || toHM(toMin(c.time) + 60)), day: c.day, moved: false };
+  b.setPointerCapture && b.setPointerCapture(ev.pointerId);
+}
+function ttClick(ev) {
+  const slots = ev.target.closest && ev.target.closest('.tt-slots');
+  if (!slots || arranging || (ev.target.closest && ev.target.closest('.tt-block'))) return;
+  const r = slots.getBoundingClientRect(), { lo } = ttRange(), m = Math.round(((ev.clientY - r.top) / TT_PX + lo) / 15) * 15;
+  openTTEditor({ day: +slots.dataset.day, time: toHM(m), end: toHM(m + 60) });
+}
+function ttPointerMove(ev) {
+  if (!ttDrag) return;
+  const dy = ev.clientY - ttDrag.y0, dx = ev.clientX - ttDrag.x0;
+  if (!ttDrag.moved && Math.abs(dy) < 5 && Math.abs(dx) < 5) return;
+  ttDrag.moved = true; ttDrag.el.classList.add('dragging');
+  const dm = Math.round(dy / TT_PX / 5) * 5, { lo, hi } = ttRange();
+  if (ttDrag.resize) {
+    const ne = Math.max(ttDrag.s + 15, Math.min(hi + 60, ttDrag.e + dm)); ttDrag.ne = ne; ttDrag.el.style.height = (ne - ttDrag.s) * TT_PX + 'px';
+    ttDrag.el.querySelector('span').textContent = `${D.time(toHM(ttDrag.s))}–${D.time(toHM(ne))}`;
+  } else {
+    const len = ttDrag.e - ttDrag.s, ns = Math.max(lo - 60, Math.min(hi - 15, ttDrag.s + dm));
+    const col = document.elementsFromPoint(ev.clientX, ev.clientY).find(el => el.classList && el.classList.contains('tt-slots'));
+    ttDrag.ns = ns; ttDrag.nd = col ? +col.dataset.day : ttDrag.nd || ttDrag.day;
+    const target = document.querySelector(`.tt-slots[data-day="${ttDrag.nd}"]`);
+    if (target && ttDrag.el.parentElement !== target) target.appendChild(ttDrag.el);
+    ttDrag.el.style.top = (ns - lo) * TT_PX + 'px';
+    ttDrag.el.querySelector('span').textContent = `${D.time(toHM(ns))}–${D.time(toHM(ns + len))}`;
+  }
+}
+function ttPointerUp() {
+  if (!ttDrag) return;
+  const d = ttDrag; ttDrag = null;
+  const c = S().timetable.find(x => x.id === d.id); if (!c) return;
+  if (!d.moved) { openTTEditor({ id: c.id }); return; }
+  const snap = Store.snapshot();
+  if (d.resize && d.ne) c.end = toHM(d.ne);
+  else if (d.ns != null) { const len = d.e - d.s; c.time = toHM(d.ns); c.end = toHM(d.ns + len); c.day = d.nd || c.day; }
+  commit(); toast(`${c.title}: ${['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][c.day]} ${D.time(c.time)}–${D.time(c.end)}`, snap);
+}
 function viewTeaching() {
   const st = S(), open = st.tasks.filter(t => t.category === 'teaching');
   const todo = open.filter(t => t.status === 'todo');
@@ -2508,10 +2732,7 @@ function viewTeaching() {
     return `<section class="panel" style="margin-bottom:18px"><h2>Back to school <span class="sub">first day ${D.label(ts)}, ${D.rel(ts)}. ${done} of ${l.length} done</span></h2>
       <ul class="rows">${l.map((c, i) => `<li class="row ${c.done ? 'is-done' : ''}"><button class="check" data-action="termprep-toggle" data-id="${ts}" data-i="${i}" aria-label="Toggle ${esc(c.text)}"></button><div class="row-main"><span class="row-title" style="cursor:default">${esc(c.text)}</span></div></li>`).join('')}</ul></section>`;
   })()}
-    <section class="panel" style="margin-bottom:18px"><h2>Weekly timetable <span class="sub">repeats on school days, skips holidays</span></h2>
-      ${S().timetable.length ? `<div class="tt">${[1, 2, 3, 4, 5].map(d => { const cl = S().timetable.filter(c => c.day === d).sort((a, b) => a.time.localeCompare(b.time)); return `<div><b>${['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][d]}</b>${cl.length ? cl.map(c => `<div class="tt-item"><span>${D.time(c.time)}${c.end ? '–' + D.time(c.end) : ''}</span> ${esc(c.title)} <button class="linkbtn" data-action="tt-remove" data-id="${c.id}" aria-label="Remove ${esc(c.title)}">×</button></div>`).join('') : '<div class="muted tt-item">—</div>'}</div>`; }).join('')}</div>` : '<p class="empty">Add your regular classes once and they’ll show on Today and in Coming up, every school day.</p>'}
-      <form class="inline-form" data-form="timetable" style="margin-top:12px"><select class="input" name="day" aria-label="Day" style="max-width:90px">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((d, i) => `<option value="${i + 1}">${d}</option>`).join('')}</select><label class="muted" style="font-size:14px">From</label><input class="input" name="time" type="time" value="09:00" aria-label="Start time" style="max-width:120px"><label class="muted" style="font-size:14px">to</label><input class="input" name="end" type="time" value="10:00" aria-label="Finish time" style="max-width:120px"><input class="input" name="title" placeholder="e.g. Year 10 Music" aria-label="Class"><button class="btn small" type="submit">Add class</button></form>
-    </section>
+    <section class="panel"><h2>Weekly timetable</h2>${timetableGrid()}</section>
   <div class="grid g-now">
     <section class="panel"><h2>Units of work</h2>
       ${st.units.map(u => { const p = Math.round(u.planned / u.total * 100); const idle = -D.diff(u.lastActivity); return `<div class="unit"><div class="unit-top"><b>${esc(u.name)}</b><span class="muted">${u.planned} of ${u.total} lessons planned</span></div><div class="bar ${p < 35 ? 'low' : p < 65 ? 'mid' : ''}"><span style="width:${p}%"></span></div><div class="row-meta" style="justify-content:space-between;margin-top:6px"><span>${idle >= 14 ? `<span class="pri">Untouched for ${idle} days</span>` : `Last worked on ${D.rel(u.lastActivity)}`}</span><span class="mini"><button data-action="unit-step" data-id="${u.id}" data-d="-1" aria-label="One fewer lesson planned">−</button><button data-action="unit-step" data-id="${u.id}" data-d="1" aria-label="One more lesson planned">+</button></span></div></div>`; }).join('')}
@@ -3291,11 +3512,11 @@ async function saveExpense(again) {
     Object.assign(x, { amount: amt, gst, gstIncl: !!d.gstIncl, supplier: String(d.supplier || '').trim(), category: d.category || guessExpCat(d.description + ' ' + d.supplier), workPct: Math.max(0, Math.min(100, +d.workPct || 0)) });
     if (d.file) {
       const rid = x.receiptId || uid('rc');
-      try { await ReceiptDB.put(rid, d.file); x.receiptId = rid; x.receiptName = d.receiptName; x.receiptType = d.fileType; }
+      try { await ReceiptDB.put(rid, d.file); x.receiptId = rid; x.receiptName = d.receiptName; x.receiptType = d.fileType; x.receiptCloud = false; }
       catch (e) { toast('The expense is saved, but this browser wouldn’t store the receipt file.'); }
     }
   }
-  commit();
+  commit(); FileSync.flush();
   toast(`${trip ? `Trip of ${x.km} km` : `$${x.amount.toFixed(2)} ${x.description || expCatLabel(x.category).toLowerCase()}`} saved`, snap);
   if (again) openExpenseModal(null, d.kind); else { expDraft = null; closeOverlay(); refreshExpList(); }
 }
@@ -3359,7 +3580,7 @@ async function downloadTaxPack() {
       let file = '';
       if (x.receiptId) {
         try {
-          const blob = await ReceiptDB.get(x.receiptId);
+          const blob = await FileSync.get(x.receiptId);
           if (blob) {
             const ext = (x.receiptType || blob.type || '').includes('pdf') ? 'pdf' : (x.receiptType || blob.type || '').includes('png') ? 'png' : 'jpg';
             let base = `${x.date} ${safe(x.supplier || x.description || 'receipt')} $${(+x.amount).toFixed(2)}`, n = base, i = 2;
@@ -3390,8 +3611,8 @@ async function downloadTaxPack() {
 }
 async function viewReceipt(id) {
   const x = S().expenses.find(e => e.id === id); if (!x || !x.receiptId) return;
-  let blob = null; try { blob = await ReceiptDB.get(x.receiptId); } catch (e) {}
-  if (!blob) { toast('That receipt file isn’t in this browser. Receipts stay on the computer they were added on.'); return; }
+  const blob = await FileSync.get(x.receiptId);
+  if (!blob) { toast(Sync.enabled() ? 'Couldn’t find that receipt in your Drive. It may not have finished uploading from the other device yet.' : 'That receipt was added on another device.'); return; }
   const url = URL.createObjectURL(blob), img = /^image\//.test(blob.type || x.receiptType || '');
   const back = $('#exp-list') ? 'exp-all' : 'close';
   $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="rc-title">
@@ -3525,7 +3746,7 @@ function venuesPanel() {
       <td>${r.waiting.length ? `${dueText(r.waiting[0])}${r.waiting.length > 1 ? ` <span class="muted">+${r.waiting.length - 1} more</span>` : ''}` : '<span class="muted">—</span>'}</td>
       <td class="num">${r.km ? r.km + ' km' : '<span class="muted">—</span>'}</td><td><button class="btn small ghost" data-action="venue-edit" data-id="${esc(r.k)}">Edit</button></td></tr>`).join('')}
     <tr class="tot"><td>Total</td><td class="num">${rows_.reduce((a, r) => a + r.gigs, 0)}</td><td class="num">${aud(rows_.reduce((a, r) => a + r.paid, 0))}</td><td class="num">${aud(rows_.reduce((a, r) => a + r.toCome, 0))}</td><td class="num">${aud(rows_.reduce((a, r) => a + r.total, 0))}</td><td colspan="5"></td></tr>
-    </tbody></table></div><p class="muted" style="margin:8px 0 0;font-size:13.5px">For gigs in ${r.label}: Paid is what's come in, Still to come is played-but-unpaid plus gigs not yet played, and Total for FY is both together. Due in counts down from each invoice you generate.</p>` : `<p class="empty">No venues with gigs in ${r.label}.</p>`}</section>`;
+    </tbody></table></div>` : `<p class="empty">No venues with gigs in ${r.label}.</p>`}</section>`;
 }
 const gigsAt = k => S().gigs.filter(g => venueKey(g.venue) === k);
 function openVenueModal(k) {
@@ -3771,12 +3992,12 @@ async function addAttachments(id, fileList) {
     try { await ReceiptDB.put(fid, blob); t.files.push({ id: fid, name: file.name, type: blob.type || file.type, size: blob.size, added: D.today() }); added++; }
     catch (e) { toast('This browser wouldn’t store that file.'); }
   }
-  if (added) { Store.save(); render(); refreshTaskExtras(id); toast(`${plural(added, 'file')} attached`); }
+  if (added) { Store.save(); render(); refreshTaskExtras(id); toast(`${plural(added, 'file')} attached`); FileSync.flush(); }
 }
 async function viewAttachment(id, fid) {
   const t = taskById(id), f = t && (t.files || []).find(x => x.id === fid); if (!f) return;
-  const blob = await ReceiptDB.get(fid).catch(() => null);
-  if (!blob) { toast('That file isn’t in this browser. Attachments stay on the computer they were added on.'); return; }
+  const blob = await FileSync.get(fid);
+  if (!blob) { toast(Sync.enabled() ? 'Couldn’t find that file in your Drive. It may not have finished uploading from the other device yet.' : 'That file was added on another device.'); return; }
   const box = $('#att-preview'); if (!box) return;
   if (/^image\//.test(blob.type)) box.innerHTML = `<figure class="att-fig"><img src="${URL.createObjectURL(blob)}" alt="${esc(f.name)}"><figcaption>${esc(f.name)} <button type="button" class="linkbtn" data-action="att-close">Close</button></figcaption></figure>`;
   else saveFile(blob, f.name);
@@ -3853,7 +4074,11 @@ function openCalModal() {
         <li>Change the key on the first line to a random word or phrase only you know.</li>
         <li>Choose Deploy, New deployment, Web app. Set Execute as to Me and Who has access to Anyone, then Deploy and allow access.</li>
         <li>Copy the Web app URL, add <b>?key=</b> followed by your key, and paste it below.</li></ol>`}
-      ${location.protocol === 'https:' ? `<p class="import-sum">${Sync.enabled() ? `Syncing between your devices through the same link${Sync.lastOk ? `, last synced ${agoText(Sync.lastOk)}` : ''}.` : 'Once your link is in, this dashboard syncs between your phone and computer.'}${Sync.error ? ` <span class="warn-t">${esc(Sync.error)}</span>` : ''} <button class="linkbtn" data-action="sync-now">Sync now</button></p>` : ''}
+      ${location.protocol === 'https:' ? `<div class="sync-box">
+        <div class="sync-line"><b>This device</b><span>${esc(cap(deviceName()))}</span><button class="linkbtn" data-action="device-rename">Rename</button></div>
+        <div class="sync-line"><b>Your data</b><span>${!Sync.enabled() ? 'Add your link below to sync with your other device' : Sync.error ? `<span class="warn-t">${esc(Sync.error)}</span>` : `Synced ${Sync.lastOk ? agoText(Sync.lastOk) : 'soon'}${(S().meta || {}).device && (S().meta || {}).device !== deviceName() ? `. Latest change came from ${esc(yourDevice(S().meta.device))}` : ''}`}</span><button class="linkbtn" data-action="sync-now">Sync now</button></div>
+        <div class="sync-line"><b>Calendar</b><span>${Feed.error ? `<span class="warn-t">${esc(Feed.error)}</span>` : Cal.lastSynced() ? `Read ${agoText(Cal.lastSynced())} on this ${esc(deviceName())}` : 'Not read yet on this device'}</span></div>
+      </div>` : ''}
       <label class="field">Calendar feed link<input class="input" id="feed-url" value="${esc(Feed.url())}" placeholder="https://script.google.com/macros/s/…/exec?key=…" autocomplete="off"></label>
       ${Feed.error ? `<p class="cal-err">${esc(Feed.error)}</p>` : ''}
       ${connected ? `<div style="margin-top:14px">${(() => { const c = S().calendar.lastImport; if (!c) return ''; const bits = [[c.gig, 'gig outside your Gigs calendar', 'gigs outside your Gigs calendar'], [c.task, 'to-do', 'to-dos'], [c.commitment, 'appointment or event', 'appointments and events'], [c.rehearsal, 'rehearsal'], [c.workout, 'workout'], [c.birthday, 'birthday'], [c.bill, 'bill']].filter(x => x[0]).map(x => plural(x[0], x[1], x[2])); return bits.length ? `<p class="import-sum">From your calendars right now: ${listJoin(bits)}. <button class="linkbtn" data-action="cal-resort">Sort again</button></p>` : ''; })()}${st.calendars.map(c => `<div class="cal-row"><div>${colSel(c)}${esc(c.name)}<small>${c.role === 'off' ? 'Not synced' : st.syncedAt[c.id] ? `${plural((st.events[c.id] || []).length, 'event')}, synced ${agoText(st.syncedAt[c.id])}` : 'Waiting for next sync'}</small></div>${roleSel(c)}</div>`).join('')}</div>` : ''}
@@ -3953,7 +4178,8 @@ function tickFocus() {
 /* ---------- 7. Actions ---------- */
 function commit() { Store.save(); render(); }
 function go(view) {
-  arranging = false; VIEW = view; history.replaceState(null, '', '#' + view); closeOverlay(); render(); window.scrollTo({ top: 0 }); }
+  arranging = false;
+  if (dictation) dictation.stop(); VIEW = view; history.replaceState(null, '', '#' + view); closeOverlay(); render(); window.scrollTo({ top: 0 }); }
 
 function completeTask(t) {
   const st = S();
@@ -4075,6 +4301,13 @@ const ACTIONS = {
   'inv-starter': () => downloadStarterTemplate(),
   'inv-remove'() { const snap = Store.snapshot(); delete S().invoiceTemplate; Store.save(); openInvoiceSettings(); toast('Template removed', snap); },
   'music-settings': () => openMusicSettings(),
+  'more-open': () => openMoreSheet(),
+  'capture-open': () => { capMode = 'auto'; openCapture(); },
+  'cap-mode'(el) { const t = $('#cap-text'), v = t ? t.value : ''; capMode = el.dataset.m; openCapture(v); },
+  'cap-save': () => captureSave(),
+  'cap-ask'(el) { closeOverlay(); handleAsk(el.dataset.q); },
+  'cap-mic'(el) { const t = $('#cap-text'); if (t) dictate(t, el, () => { if (capMode !== 'ask') captureSave(); else { closeOverlay(); handleAsk(t.value); } }); },
+  'cap-photo'() { $('#cap-photo').click(); },
   'exp-add': () => openExpenseModal(null, 'expense'),
   'exp-trip': () => openExpenseModal(null, 'trip'),
   'exp-edit'(el) { openExpenseModal(el.dataset.id); },
@@ -4082,7 +4315,7 @@ const ACTIONS = {
   'exp-file'() { expDraftSync(); $('#receipt-file').click(); },
   'exp-view-receipt'() { if (expDraft && expDraft.id) viewReceipt(expDraft.id); },
   'exp-receipt'(el) { viewReceipt(el.dataset.id); },
-  async 'exp-receipt-dl'(el) { const x = S().expenses.find(e => e.id === el.dataset.id); const b = x && await ReceiptDB.get(x.receiptId).catch(() => null); if (b) saveFile(b, `${x.date} ${x.supplier || 'receipt'}.${(x.receiptType || b.type || '').includes('pdf') ? 'pdf' : (x.receiptType || b.type || '').includes('png') ? 'png' : 'jpg'}`.replace(/[\/:*?"<>|]+/g, '')); },
+  async 'exp-receipt-dl'(el) { const x = S().expenses.find(e => e.id === el.dataset.id); const b = x && await FileSync.get(x.receiptId); if (b) saveFile(b, `${x.date} ${x.supplier || 'receipt'}.${(x.receiptType || b.type || '').includes('pdf') ? 'pdf' : (x.receiptType || b.type || '').includes('png') ? 'png' : 'jpg'}`.replace(/[\/:*?"<>|]+/g, '')); },
   'exp-delete'(el) {
     const st = S(), x = st.expenses.find(e => e.id === el.dataset.id); if (!x) return;
     const snap = Store.snapshot(); st.expenses = st.expenses.filter(e => e.id !== x.id);
@@ -4150,7 +4383,17 @@ const ACTIONS = {
     if (el.dataset.from === 'audit') openAudit();
   },
   'termprep-toggle'(el) { const l = termPrepList(el.dataset.id); const c = l[+el.dataset.i]; c.done = !c.done; commit(); },
-  'tt-remove'(el) { S().timetable = S().timetable.filter(c => c.id !== el.dataset.id); commit(); },
+  'tt-remove'(el) { const snap = Store.snapshot(); S().timetable = S().timetable.filter(c => c.id !== el.dataset.id); closeOverlay(); commit(); toast('Class removed', snap); },
+  'tt-new'() { openTTEditor({ day: Math.min(5, Math.max(1, new Date().getDay())), time: '09:00', end: '10:00' }); },
+  'tt-dup'(el) { const c = S().timetable.find(x => x.id === el.dataset.id); if (!c) return; closeOverlay(); openTTEditor({ day: c.day === 5 ? 1 : c.day + 1, time: c.time, end: c.end }); if (ttEdit) { ttEdit.title = c.title; ttEdit.color = c.color; const f = $('form[data-form=tt-block]'); if (f) { f.elements.title.value = c.title; [...f.elements.color].forEach(r => { r.checked = r.value === c.color; }); } } },
+  'tile-rename'(el) {
+    const st = S(), k = el.dataset.k, names = st.settings.tileNames || (st.settings.tileNames = {});
+    const cur = names[k] || k.split(':').slice(1).join(':');
+    const n = prompt('Tile name (leave empty to go back to the original):', cur);
+    if (n === null) return;
+    if (n.trim() && n.trim() !== k.split(':').slice(1).join(':')) names[k] = n.trim().slice(0, 60); else delete names[k];
+    Store.save(); render();
+  },
   'tile-arrange'() { arranging = !arranging; render(); },
   'tile-reset'() { const st = S(); if (st.settings.tiles) delete st.settings.tiles[VIEW]; Store.save(); render(); toast('Layout reset for this page'); },
   'tile-move'(el) { const lay = tileLayout(), order = tileOrderNow(), i = order.indexOf(el.dataset.k), j = i + +el.dataset.d; if (i < 0 || j < 0 || j >= order.length) return; [order[i], order[j]] = [order[j], order[i]]; lay.order = order; Store.save(); render(); },
@@ -4171,8 +4414,8 @@ const ACTIONS = {
   'step-mv'(el) { const t = taskById(el.dataset.id), i = +el.dataset.i, j = i + +el.dataset.d; if (!t || j < 0 || j >= t.steps.length) return; [t.steps[i], t.steps[j]] = [t.steps[j], t.steps[i]]; Store.save(); render(); refreshTaskExtras(t.id); },
   'att-add'(el) { attTarget = el.dataset.id; $('#attach-file').click(); },
   'att-view'(el) { viewAttachment(el.dataset.id, el.dataset.f); },
-  async 'att-dl'(el) { const t = taskById(el.dataset.id), f = t && t.files.find(x => x.id === el.dataset.f); const b = f && await ReceiptDB.get(f.id).catch(() => null); if (b) saveFile(b, f.name); else toast('That file isn’t in this browser.'); },
-  'att-del'(el) { const t = taskById(el.dataset.id); if (!t) return; const f = t.files.find(x => x.id === el.dataset.f); t.files = t.files.filter(x => x.id !== el.dataset.f); Store.save(); render(); refreshTaskExtras(t.id); if (f) { ReceiptDB.del(f.id).catch(() => {}); toast(`Removed ${f.name}`); } },
+  async 'att-dl'(el) { const t = taskById(el.dataset.id), f = t && t.files.find(x => x.id === el.dataset.f); const b = f && await FileSync.get(f.id); if (b) saveFile(b, f.name); else toast('Couldn’t find that file.'); },
+  'att-del'(el) { const t = taskById(el.dataset.id); if (!t) return; const f = t.files.find(x => x.id === el.dataset.f); t.files = t.files.filter(x => x.id !== el.dataset.f); Store.save(); render(); refreshTaskExtras(t.id); if (f) { ReceiptDB.del(f.id).catch(() => {}); if (f.cloud) FileSync.trash(f.id); toast(`Removed ${f.name}`); } },
   'att-close'() { const b = $('#att-preview'); if (b) b.innerHTML = ''; },
   'ex-row'() { const box = $('#ex-rows'); if (box) { box.insertAdjacentHTML('beforeend', exRowHtml()); box.lastElementChild.querySelector('input').focus(); } },
   'ex-del'(el) { const row = el.closest('.ex-row'), box = $('#ex-rows'); if (!row || !box) return; if (box.children.length > 1) row.remove(); else row.querySelectorAll('input').forEach(i => { i.value = ''; }); },
@@ -4190,6 +4433,7 @@ const ACTIONS = {
   'gigs-all'(el) { const on = el.dataset.open === '1'; upcomingGigs().forEach(g => on ? openGigs.set().add(g.id) : openGigs.set().delete(g.id)); openGigs.save(); S().settings.open_gig = on ? [...new Set(upcomingGigs().map(g => g.date.slice(0, 7)))] : []; Store.save(); render(); },
   'cal-open': () => openCalModal(),
   'cal-connect': () => { if (!Cal.available) { openCalModal(); return; } if (!$('#cal-modal')) openCalModal(); Cal.connect(); },
+  'device-rename'() { const n = prompt('What should this device be called? For example: Mac, phone, school laptop', deviceName()); if (n && n.trim()) { try { localStorage.setItem(DEVICE_KEY, n.trim().slice(0, 30)); } catch (e) {} refreshCalModal(); render(); } },
   'sync-now'() { Sync.push().then(() => Sync.pull('manual')).catch(() => {}).then(() => { refreshCalModal(); toast(Sync.error || 'Synced'); }); },
   'cal-sync': () => Cal.available ? Cal.sync() : Feed.sync(true),
   'feed-save'() {
@@ -4256,6 +4500,121 @@ function splitDump(txt) {
 
 let pendingTeachQ = null;
 function goTeachAsk() { go('teaching'); if (pendingTeachQ) { const q = pendingTeachQ; pendingTeachQ = null; teachSend(q); } }
+/* ---------- Phone: tab bar, More sheet, capture sheet ---------- */
+const TABS = [['today', 'Today'], ['teaching', 'Teaching'], ['music', 'Music'], ['life', 'Life'], ['more', 'More']];
+const TAB_ICONS = {
+  today: '<path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/>',
+  teaching: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  life: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
+};
+function renderTabbar() {
+  const bar = $('#tabbar'); if (!bar) return;
+  const late = openTasks().filter(t => isActionable(t) && t.due && D.diff(t.due) < 0).length;
+  const inMore = !['today', 'teaching', 'music', 'life'].includes(VIEW);
+  bar.innerHTML = TABS.map(([id, label]) => {
+    const on = id === 'more' ? inMore : VIEW === id;
+    return `<button data-action="${id === 'more' ? 'more-open' : 'nav'}" data-view="${id}" ${on ? 'aria-current="page"' : ''}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[id]}</svg><span>${label}</span>${id === 'today' && late ? `<b class="badge">${late}</b>` : ''}</button>`;
+  }).join('');
+}
+function openMoreSheet() {
+  const st = S(), inboxN = st.inbox.length;
+  const item = (action, label, sub, extra = '') => `<button class="sheet-item" data-action="${action}" ${extra}><span>${label}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  $('#overlay').innerHTML = `<div class="scrim sheet-scrim" data-action="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="More">
+    <div class="sheet-grab" aria-hidden="true"></div>
+    ${item('nav', 'Inbox', inboxN ? plural(inboxN, 'unsorted thought') : 'Dump thoughts and sort them', 'data-view="inbox"')}
+    ${item('nav', 'Fitness', 'Workouts, lifts and weight', 'data-view="fitness"')}
+    ${item('nav', 'Someday', 'Ideas and projects', 'data-view="someday"')}
+    <div class="sheet-sep"></div>
+    ${item('cal-open', 'Calendar and sync', Sync.error || (Sync.lastOk ? `This ${deviceName()}: synced ${agoText(Sync.lastOk)}` : Cal.firstError() || ''))}
+    ${item('ai-settings', 'Teaching partner settings', '')}
+    ${item('theme', 'Switch light or dark', '')}
+    ${item('export', 'Export a backup', '')}
+    ${item('import', 'Import a backup', '')}
+  </div></div>`;
+}
+let capMode = 'auto';
+const CAP_MODES = [['auto', 'Anything'], ['task', 'Task'], ['expense', 'Expense'], ['shop', 'Shopping'], ['idea', 'Idea'], ['ask', 'Question']];
+function openCapture(prefill) {
+  $('#overlay').innerHTML = `<div class="scrim sheet-scrim" data-action="scrim"><div class="sheet cap-sheet" id="cap-sheet" role="dialog" aria-modal="true" aria-labelledby="cap-title">
+    <div class="sheet-grab" aria-hidden="true"></div>
+    <h2 id="cap-title">Capture</h2>
+    <div class="seg cap-modes" role="group" aria-label="What is it">${CAP_MODES.map(([k, l]) => `<button class="${capMode === k ? 'on' : ''}" data-action="cap-mode" data-m="${k}">${l}</button>`).join('')}</div>
+    <label class="sr" for="cap-text">What's on your mind</label>
+    <textarea class="input" id="cap-text" rows="3" placeholder="${capMode === 'expense' ? 'e.g. $45 strings at Music Junction' : capMode === 'ask' ? 'e.g. What should I work on for the next hour?' : capMode === 'shop' ? 'e.g. milk, coffee beans, AA batteries' : 'e.g. Invoice BRT Friday, Book dentist, Learn Valerie'}">${esc(prefill || '')}</textarea>
+    <div class="cap-actions">
+      ${SpeechRec ? '<button class="btn" id="cap-mic" data-action="cap-mic">🎤 Speak</button>' : ''}
+      <button class="btn" data-action="cap-photo">📷 Receipt photo</button>
+      <button class="btn primary" data-action="cap-save">Add</button>
+    </div>
+    ${capMode === 'ask' || capMode === 'auto' ? `<div class="prompts cap-prompts">${COMMANDS.slice(0, 4).map(c => `<button data-action="cap-ask" data-q="${esc(c)}">${esc(c)}</button>`).join('')}</div>` : ''}
+    <p class="muted" style="font-size:13px;margin:10px 0 0">One per line to add several at once.</p>
+  </div></div>`;
+  setTimeout(() => { const t = $('#cap-text'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 60);
+}
+/** Dictation into any text box; calls done(text) when you stop talking. */
+let dictation = null;
+function dictate(input, btn, done) {
+  if (!SpeechRec) { toast('Voice input isn’t available in this browser.'); return; }
+  if (dictation) { dictation.stop(); return; }
+  try {
+    const r = new SpeechRec(); r.lang = 'en-AU'; r.interimResults = true; r.continuous = false;
+    const start = input.value ? input.value.replace(/\s*$/, ' ') : ''; let finalText = '';
+    r.onresult = ev => { let interim = ''; for (let i = ev.resultIndex; i < ev.results.length; i++) { const x = ev.results[i]; if (x.isFinal) finalText += x[0].transcript; else interim += x[0].transcript; } input.value = (start + finalText + interim).trim(); };
+    r.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') toast('Microphone access is blocked. Allow it for this app in Chrome’s site settings.'); };
+    r.onend = () => { dictation = null; if (btn) { btn.classList.remove('on'); btn.textContent = '🎤 Speak'; } if (done && finalText.trim()) done(input.value.trim()); };
+    r.start(); dictation = r; if (btn) { btn.classList.add('on'); btn.textContent = 'Listening… tap to stop'; }
+  } catch (e) { dictation = null; toast('Couldn’t start the microphone.'); }
+}
+/** An expense from free text, with or without "spent" at the start. */
+function expenseFromText(t) {
+  return quickExpense(/^\s*(spent|bought|paid|expense|receipt|purchased)\b/i.test(t) ? t : 'spent ' + t);
+}
+function captureSave() {
+  const box = $('#cap-text'), text = (box && box.value || '').trim(); if (!text) { box && box.focus(); return; }
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean), snap = Store.snapshot(), done = [];
+  if (capMode === 'ask') { closeOverlay(); handleAsk(text); return; }
+  if (capMode === 'expense' && lines.length === 1 && !/\$\s?\d/.test(text)) {   // no amount given: open the full expense form
+    closeOverlay(); openExpenseModal(null, 'expense'); if (expDraft) { expDraft.description = cap(text); expDraft.category = guessExpCat(text); renderExpenseModal(); } return;
+  }
+  for (const l of lines) {
+    if (capMode === 'expense') { const x = expenseFromText(l); if (x) done.push(`$${x.amount.toFixed(2)} ${x.description || 'expense'}`); continue; }
+    if (capMode === 'shop') { l.split(/\s*,\s*/).filter(Boolean).forEach(item => { S().tasks.push({ id: uid('t'), title: cap(item), category: scoreCats(item.toLowerCase(), ['music', 'health', 'teaching', 'personal']) || 'home', type: 'shopping', due: null, time: null, priority: 3, estimate: 5, notes: '', status: 'todo', createdAt: D.today(), doneAt: null, gigId: null, projectId: null, snoozed: null }); done.push(cap(item)); }); continue; }
+    if (capMode === 'auto' && lines.length === 1 && isQuestion(l)) { closeOverlay(); handleAsk(l); return; }
+    const x = capMode === 'auto' ? quickExpense(l) : null;
+    if (x) { done.push(`$${x.amount.toFixed(2)} expense`); continue; }
+    const pz = parseThought(l, capMode === 'idea' ? { forceCategory: 'someday' } : {}); if (!pz) continue;
+    if (capMode === 'task' && pz.type === 'idea') { pz.type = 'task'; if (pz.category === 'someday') pz.category = 'personal'; }
+    fileItem(pz); done.push(pz.title);
+  }
+  closeOverlay(); commit();
+  toast(done.length === 1 ? `Added: ${done[0]}` : `Added ${plural(done.length, 'item')}`, snap);
+}
+/* ---------- Share to Dashboard (Android share menu) ---------- */
+async function consumeShare() {
+  if (!/[?&]shared=1/.test(location.search) || !('caches' in window)) return;
+  history.replaceState(null, '', location.pathname + location.hash);
+  try {
+    const cache = await caches.open('mitch-share'), base = new URL('./', location.href).href;
+    const mr = await cache.match(base + 'share/meta'); if (!mr) return;
+    const meta = await mr.json(), files = [];
+    for (const f of meta.files || []) { const r = await cache.match(base + 'share/' + f.key); if (r) files.push(new File([await r.blob()], f.name || 'shared', { type: f.type || (await r.blob()).type })); }
+    await caches.delete('mitch-share');
+    const text = [meta.title, meta.text, meta.url].filter(Boolean).join(' ').trim();
+    if (files.length) {
+      go('music'); openExpenseModal(null, 'expense');
+      if (text && expDraft) { expDraft.description = cap(text).slice(0, 120); renderExpenseModal(); }
+      expReceiptChosen(files[0]);
+      if (files.length > 1) toast(`Added the first of ${files.length} files. Share the others one at a time.`);
+    } else if (text) { capMode = 'auto'; openCapture(text); }
+  } catch (e) { toast('Couldn’t open what was shared. Try again.'); }
+}
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator) || !(location.protocol === 'https:' || location.hostname === 'localhost') || /claude\.ai|claudeusercontent|anthropic/.test(location.hostname)) return;
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 function handleAsk(q) {
   q = (q || '').trim(); if (!q) return;
   pendingTeachQ = q;
@@ -4365,6 +4724,13 @@ function boot() {
       const k = val('key'); if (!k || /^•+$/.test(k)) { closeOverlay(); return; }
       if (!/^sk-ant-/.test(k)) { toast('That doesn’t look like an Anthropic API key. It should start with sk-ant-'); return; }
       st.settings.apiKey = k; closeOverlay(); commit(); toast('API key saved. Your teaching partner is ready.');
+    } else if (kind === 'tt-block') {
+      const title = val('title'), time = val('time'), end = val('end'); if (!title || !time) return;
+      const e0 = end && toMin(end) > toMin(time) ? end : toHM(toMin(time) + 60), color = (f.querySelector('input[name=color]:checked') || {}).value || TT_COLOURS[0];
+      const snap = Store.snapshot();
+      if (ttEdit && ttEdit.id) Object.assign(st.timetable.find(c => c.id === ttEdit.id) || {}, { title: cap(title), day: +val('day'), time, end: e0, color });
+      else st.timetable.push({ id: uid('tt'), title: cap(title), day: +val('day'), time, end: e0, color });
+      ttEdit = null; closeOverlay(); commit(); toast('Timetable saved', snap);
     } else if (kind === 'timetable') {
       if (!val('title') || !val('time')) return;
       const tEnd = val('end') && val('end') > val('time') ? val('end') : null;
@@ -4422,9 +4788,15 @@ function boot() {
   $('#attach-file').addEventListener('change', e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length && attTarget) addAttachments(attTarget, fl); });
   document.addEventListener('dragover', e => { if (e.target.closest && e.target.closest('#att-drop')) e.preventDefault(); });
   document.addEventListener('drop', e => { const z = e.target.closest && e.target.closest('#att-drop'); if (z) { e.preventDefault(); addAttachments(z.dataset.id, e.dataTransfer.files); } });
+  $('#cap-photo').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const t = $('#cap-text'); const note = t ? t.value.trim() : ''; closeOverlay(); go('music'); openExpenseModal(null, 'expense'); if (note && expDraft) { expDraft.description = cap(note); renderExpenseModal(); } expReceiptChosen(f); });
   $('#receipt-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) expReceiptChosen(f); });
   $('#inv-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) uploadInvoiceTemplate(f); });
   $('#setlist-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) setlistImportFile(f); });
+  document.addEventListener('pointerdown', ttPointerDown);
+  document.addEventListener('click', ttClick);
+  document.addEventListener('pointermove', ttPointerMove);
+  document.addEventListener('pointerup', ttPointerUp);
+  document.addEventListener('pointercancel', () => { ttDrag = null; render(); });
   document.addEventListener('dragstart', e => { const s = e.target.closest && e.target.closest('.board.arranging > section'); if (!s) return; dragKey = s.dataset.tkey; s.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dragKey); } catch (x) {} });
   document.addEventListener('dragend', () => { document.querySelectorAll('.board section.dragging, .board section.drop-before, .board section.drop-after').forEach(s => s.classList.remove('dragging', 'drop-before', 'drop-after')); dragKey = null; });
   document.addEventListener('dragover', e => {
@@ -4461,6 +4833,7 @@ function boot() {
     r.readAsText(file); e.target.value = '';
   });
   document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'cap-text' && !/\n/.test(e.target.value) && capMode !== 'shop') { e.preventDefault(); captureSave(); return; }
     if (e.key === 'Enter' && e.target.dataset && e.target.dataset.enter) { e.preventDefault(); ACTIONS[e.target.dataset.enter](e.target); return; }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role=button][data-action]')) { e.preventDefault(); e.target.click(); return; }
     if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { e.preventDefault(); $('#ask').focus(); }
@@ -4477,6 +4850,8 @@ function boot() {
   }, 10 * 60000);
   AI.init();
   Cal.init();
+  registerServiceWorker();
+  setTimeout(consumeShare, 300);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && Feed.active() && Date.now() - (Cal.lastSynced() || 0) > 60000) Feed.sync();
   });
