@@ -550,6 +550,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 @media (max-width:860px){
   .prompts{display:none}
   .arrange-box{display:none!important}
+  .board.arranging~*,.arranging .arrange-box{display:flex}
+  .side{display:none}
+  .main{padding:0 14px calc(156px + env(safe-area-inset-bottom,0px))!important}
+  .board.arranging>section{outline-offset:2px}
+  .tile-bar{position:sticky;top:0;z-index:4}
   .scrim{padding:10px;align-items:end}
   .scrim.sheet-scrim{padding:0}
   .modal{padding:20px 18px;border-radius:18px;max-height:calc(100% - 10px)}
@@ -590,6 +595,60 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .sync-line b{color:var(--ink-2);font-weight:600}
 .board{margin-top:14px}
 .quick{margin-bottom:6px}
+.arrange-phone{display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:30;background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:8px 10px;margin:8px 0}
+.arrange-phone span{flex:1;font-weight:600;font-size:14.5px}
+
+/* ---- Budget ---- */
+.bud-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 4px}
+.bud-nav select{width:auto;min-width:220px}
+.bud-sum{grid-template-columns:repeat(4,minmax(0,1fr))}
+.inline-form .bnum{flex:0 0 130px;width:130px}
+@media (max-width:860px){.bud-sum{grid-template-columns:1fr 1fr}}
+.bud-sum .rem.ok b{color:var(--accent)}.bud-sum .rem.warn b{color:var(--warn)}.bud-sum .rem.bad b{color:var(--danger)}
+.btbl td{padding:4px 6px;vertical-align:middle}
+.btbl .input{padding:6px 8px;font-size:14.5px;border-radius:8px}
+.btbl .bname{min-width:170px}
+.bnum{width:104px;text-align:right;font-variant-numeric:tabular-nums}
+.btbl td.num .bnum{margin-left:auto;display:block}
+.btbl .bnum::placeholder{color:var(--muted);opacity:.8}
+.tbl tr.is-cur td{background:var(--accent-soft)}
+/* ---- Marking ---- */
+.mark-item{padding:10px 0;border-bottom:1px solid var(--line)}
+.mark-item:last-child{border-bottom:0}
+.mark-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 8px;font-size:14px}
+.mark-bar{flex:1;min-width:80px;height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.mark-bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.mark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px}
+.mark-grid.compact{grid-template-columns:repeat(auto-fill,minmax(34px,1fr))}
+.mark-box{height:36px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink-2);font-size:13px;font-variant-numeric:tabular-nums}
+.mark-box:hover{border-color:var(--accent)}
+.mark-box.on{border-color:var(--mc);color:#fff;font-weight:700;background:var(--mc);animation:markpop .25s ease-out}
+.mark-box.on span{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.28);font-size:13px;line-height:1}
+.mark-box.p-stripes{background:repeating-linear-gradient(45deg,var(--mc) 0 5px,color-mix(in srgb,var(--mc) 65%,#fff) 5px 10px)}
+.mark-box.p-dots{background:radial-gradient(circle,rgba(255,255,255,.55) 2px,transparent 2.5px) 0 0/8px 8px,var(--mc)}
+.mark-box.p-checks{background:conic-gradient(color-mix(in srgb,var(--mc) 70%,#fff) 25%,var(--mc) 0 50%,color-mix(in srgb,var(--mc) 70%,#fff) 0 75%,var(--mc) 0) 0 0/10px 10px}
+.mark-box.p-zigzag{background:linear-gradient(135deg,color-mix(in srgb,var(--mc) 65%,#fff) 25%,transparent 25%) -5px 0/10px 10px,linear-gradient(225deg,color-mix(in srgb,var(--mc) 65%,#fff) 25%,transparent 25%) -5px 0/10px 10px,var(--mc)}
+.mark-box.p-rings{background:repeating-radial-gradient(circle at 50% 50%,var(--mc) 0 4px,color-mix(in srgb,var(--mc) 60%,#fff) 4px 7px)}
+@keyframes markpop{0%{transform:scale(.8)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.mark-box.on{animation:none}}
+@media (max-width:860px){.bnum{width:86px}.btbl .bname{min-width:130px}.bud-nav select{min-width:0;flex:1}}
+@media (max-width:860px){
+  .btbl.bsec thead{display:none}
+  .btbl.bsec,.btbl.bsec tbody{display:block}
+  .btbl.bsec tr.bitem{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--line);position:relative}
+  .btbl.bsec tr.bitem td{display:block;border:0;padding:0}
+  .btbl.bsec .bcell-name{grid-column:1/-1;padding-right:36px!important}
+  .btbl.bsec .bcell-name .bname{width:100%;font-weight:600}
+  .btbl.bsec td[data-label]::before{content:attr(data-label);display:block;font-size:12px;color:var(--muted);margin-bottom:3px;text-align:left}
+  .btbl.bsec td[data-label] .bnum{width:100%;margin:0}
+  .btbl.bsec .bpct{grid-column:1/-1;text-align:left;font-size:12.5px}
+  .btbl.bsec .bdel{position:absolute;top:14px;right:0}
+  .btbl.bsec tr.tot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:10px 0}
+  .btbl.bsec tr.tot td{border:0;padding:0}
+  .btbl.bsec tr.tot td:empty{display:none}
+  .btbl.bsec tr.tot td.num::before{font-size:12px;color:var(--muted);margin-right:4px}
+  .btbl.bsec tr.tot td:nth-child(2)::before{content:'Budget'}.btbl.bsec tr.tot td:nth-child(4)::before{content:'Transferred'}.btbl.bsec tr.tot td:nth-child(5)::before{content:'Used'}
+}
 </style>
 </head>
 <body>
@@ -607,6 +666,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
       <button data-action="import">Import a backup</button>
       <input type="file" id="import-file" accept="application/json" hidden>
       <input type="file" id="attach-file" multiple hidden>
+      <input type="file" id="budget-file" accept=".xlsx,.xls,.ods,.csv" hidden>
       <input type="file" id="receipt-file" accept="image/*,.pdf,application/pdf" hidden>
       <input type="file" id="inv-file" accept=".docx,.txt,.md,.html,.htm,.pdf,.doc" hidden>
       <input type="file" id="setlist-file" accept=".txt,.csv,.tsv,.md,.rtf,.docx,.pdf,.xlsx,.xls,.ods,.jpg,.jpeg,.png,.webp,.gif,text/plain,image/*" hidden>
@@ -695,8 +755,8 @@ const TYPES = {
   appointment: 'Appointment to book', event: 'Scheduled event', bill: 'Bill', shopping: 'Shopping',
   birthday: 'Birthday', workout: 'Workout', idea: 'Idea'
 };
-const VIEWS = [['today','Today'],['inbox','Inbox'],['teaching','Teaching'],['music','Music'],['life','Life admin'],['fitness','Fitness'],['someday','Someday']];
-const VIEW_DOT = { today: 'var(--accent)', inbox: 'var(--ink-2)', teaching: 'var(--c-teaching)', music: 'var(--c-music)', life: 'var(--c-personal)', fitness: 'var(--c-health)', someday: 'var(--c-someday)' };
+const VIEWS = [['today','Today'],['inbox','Inbox'],['teaching','Teaching'],['music','Music'],['life','Life admin'],['budget','Budget'],['fitness','Fitness'],['someday','Someday']];
+const VIEW_DOT = { today: 'var(--accent)', inbox: 'var(--ink-2)', teaching: 'var(--c-teaching)', music: 'var(--c-music)', life: 'var(--c-personal)', budget: 'var(--c-finance)', fitness: 'var(--c-health)', someday: 'var(--c-someday)' };
 const EST = { lesson: 50, assessment: 90, resource: 45, rehearsal: 75, invoice: 10, appointment: 10, shopping: 20, bill: 10, workout: 45, birthday: 15, idea: 0, task: 25, class: 60, unit: 120, event: 60 };
 const GIG_TEMPLATE = [
   'Confirm load-in and set times with the venue', 'Finalise the setlist', 'Full run-through rehearsal',
@@ -853,6 +913,7 @@ function migrate(s) {
   if (!Array.isArray(s.teachChat)) s.teachChat = [];
   if (!s.calHistory || typeof s.calHistory !== 'object') s.calHistory = {};
   if (!Array.isArray(s.expenses)) s.expenses = [];
+  if (!s.budget || typeof s.budget !== 'object') s.budget = { fns: [], activeId: null };
   (s.gigs || []).forEach(g => { if (!g.checklistInit && g.date >= new Date().toISOString().slice(0, 10)) { if (!g.checklist || !g.checklist.length) g.__needsList = true; } });
   if (!s.tax || typeof s.tax !== 'object') s.tax = { kmRate: 0.88 };
   if (!Array.isArray(s.hostTemplate)) s.hostTemplate = HOSTING_TEMPLATE.slice();
@@ -1073,6 +1134,7 @@ function createProject(title, category, fromTaskId) {
 }
 
 function fileItem(p) {
+  if (p && p.type === 'assessment' && !p.marking) { const n = markingFromText(p.raw || p.title); if (n) { p.marking = { total: n, done: [] }; p.title = p.title.replace(/\s*\(\d{1,3}\)\s*/, ' ').trim(); } }
   const st = S();
   if (p.type === 'song') { st.songs.push({ id: uid('song'), title: p.songTitle || p.title.replace(/^Learn\s+/i, ''), artist: '', status: 'learning', progress: 0, addedAt: D.today() }); return 'Songs to learn'; }
   if (p.type === 'gig' && p.gigDraft) {
@@ -1083,7 +1145,7 @@ function fileItem(p) {
     return 'Gigs';
   }
   if (p.suggestProject && p.makeProject) { createProject(p.title, p.category); return 'Projects'; }
-  st.tasks.push({ id: uid('t'), title: p.title, category: p.category, type: p.type, due: p.due || null, time: p.time || null,
+  st.tasks.push({ id: uid('t'), title: p.title, marking: p.marking || undefined, category: p.category, type: p.type, due: p.due || null, time: p.time || null,
     priority: +p.priority || 2, estimate: p.estimate, notes: p.notes || '', status: 'todo', createdAt: D.today(), doneAt: null,
     gigId: p.gigId || null, projectId: null, snoozed: null });
   return CATS[p.category];
@@ -2334,7 +2396,8 @@ function renderNav() {
     music: { n: open.filter(t => t.category === 'music' && isActionable(t)).length },
     life: { n: open.filter(t => ['personal', 'finance', 'home'].includes(t.category) || (t.category === 'health' && t.type !== 'workout')).filter(isActionable).length },
     fitness: { n: 0 },
-    someday: { n: open.filter(t => t.category === 'someday').length + st.projects.length }
+    someday: { n: open.filter(t => t.category === 'someday').length + st.projects.length },
+    budget: { n: 0 }
   };
   $('#nav').innerHTML = VIEWS.map(([id, label]) => {
     const c = counts[id];
@@ -2357,7 +2420,7 @@ function renderCalStatus() {
 function renderPrompts() { $('#prompts').innerHTML = COMMANDS.map(c => `<button data-action="ask" data-q="${esc(c)}">${esc(c)}</button>`).join(''); }
 
 /** Every tile can be folded away by clicking its heading. Remembered per page and tile. */
-const TIDY_VIEWS = ['today', 'inbox', 'teaching', 'music', 'life', 'fitness', 'someday'];
+const TIDY_VIEWS = ['today', 'inbox', 'teaching', 'music', 'life', 'budget', 'fitness', 'someday'];
 function makePanelsCollapsible() {
   const st = S(), col = st.settings.collapsed || (st.settings.collapsed = {});
   document.querySelectorAll('#view section.panel, #view section.now').forEach(sec => {
@@ -2390,7 +2453,9 @@ function makePanelsCollapsible() {
 /* ---------- Arrange tiles: drag to reorder, choose widths; saved per page ---------- */
 let arranging = false;
 const TILE_SPANS = [[4, 'Third'], [6, 'Half'], [8, 'Two thirds'], [12, 'Full']];
-function tileLayout() { const st = S(); st.settings.tiles = st.settings.tiles || {}; return st.settings.tiles[VIEW] || (st.settings.tiles[VIEW] = { order: [], span: {} }); }
+const isPhone = () => window.matchMedia && matchMedia('(max-width:860px)').matches;
+const layoutKey = () => VIEW + (isPhone() ? '@phone' : '');
+function tileLayout() { const st = S(); st.settings.tiles = st.settings.tiles || {}; const k = layoutKey(); return st.settings.tiles[k] || (st.settings.tiles[k] = { order: [], span: {} }); }
 function arrangeTiles() {
   const view = $('#view');
   const secs = [...view.querySelectorAll('section.panel[data-fold], section.now[data-fold]')].filter(s => !s.parentElement.closest('section'));
@@ -2405,9 +2470,12 @@ function arrangeTiles() {
     const span = lay.span[s.dataset.tkey] || +s.dataset.span;
     s.style.gridColumn = `span ${span}`; s.classList.remove('section-gap'); board.appendChild(s);
     if (arranging) {
-      s.draggable = true;
+      s.draggable = !isPhone();
       const bar = document.createElement('div'); bar.className = 'tile-bar';
-      bar.innerHTML = `<span class="grip" aria-hidden="true">⠿ Drag</span><button class="linkbtn" data-action="tile-rename" data-k="${esc(s.dataset.tkey)}">Rename</button>
+      const phone = isPhone();
+      bar.innerHTML = phone
+        ? `<span class="mini"><button data-action="tile-move" data-k="${esc(s.dataset.tkey)}" data-d="-1" aria-label="Move up">↑</button><button data-action="tile-move" data-k="${esc(s.dataset.tkey)}" data-d="1" aria-label="Move down">↓</button></span><button class="btn small ghost" data-action="tile-rename" data-k="${esc(s.dataset.tkey)}">Rename</button>`
+        : `<span class="grip" aria-hidden="true">⠿ Drag</span><button class="linkbtn" data-action="tile-rename" data-k="${esc(s.dataset.tkey)}">Rename</button>
         <span class="mini"><button data-action="tile-move" data-k="${esc(s.dataset.tkey)}" data-d="-1" aria-label="Move earlier">←</button><button data-action="tile-move" data-k="${esc(s.dataset.tkey)}" data-d="1" aria-label="Move later">→</button></span>
         <span class="seg">${TILE_SPANS.map(([n, l]) => `<button class="${span === n ? 'on' : ''}" data-action="tile-span" data-k="${esc(s.dataset.tkey)}" data-n="${n}">${l}</button>`).join('')}</span>`;
       s.insertBefore(bar, s.firstChild);
@@ -2416,6 +2484,7 @@ function arrangeTiles() {
   view.querySelectorAll(':scope > .grid').forEach(g => { if (!g.children.length) g.remove(); });
   view.querySelectorAll(':scope > form.quick').forEach(f => view.insertBefore(f, board));
   // the Arrange button lives in each page's heading
+  if (arranging && isPhone()) { const done = document.createElement('div'); done.className = 'arrange-phone'; done.innerHTML = '<span>Arranging this page</span><button class="btn small primary" data-action="tile-arrange">Done</button><button class="btn small ghost" data-action="tile-reset">Reset</button>'; view.insertBefore(done, board); }
   const vh = view.querySelector('.vhead');
   if (vh && !vh.querySelector('[data-action=tile-arrange]')) {
     const box = document.createElement('div'); box.className = 'inline-form arrange-box';
@@ -2431,7 +2500,7 @@ function safeRender() { if (viewBusy()) { pendingRender = true; return; } pendin
 function render() {
   const dumpVal = $('#dump')?.value;
   renderNav(); renderCalStatus(); renderSyncStatus(); renderTabbar();
-  const v = { today: viewToday, inbox: viewInbox, teaching: viewTeaching, music: viewMusic, life: viewLife, fitness: viewFitness, someday: viewSomeday }[VIEW];
+  const v = { today: viewToday, inbox: viewInbox, teaching: viewTeaching, music: viewMusic, life: viewLife, budget: viewBudget, fitness: viewFitness, someday: viewSomeday }[VIEW];
   $('#view').innerHTML = v();
   if (dumpVal && $('#dump')) $('#dump').value = dumpVal;
   makePanelsCollapsible();
@@ -2715,6 +2784,32 @@ function ttPointerUp() {
   else if (d.ns != null) { const len = d.e - d.s; c.time = toHM(d.ns); c.end = toHM(d.ns + len); c.day = d.nd || c.day; }
   commit(); toast(`${c.title}: ${['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][c.day]} ${D.time(c.time)}–${D.time(c.end)}`, snap);
 }
+/* ---------- Marking: a numbered box for each piece of work, ticked as you go ---------- */
+const MARK_FUN = {
+  colours: ['#E4572E', '#F3A712', '#29BF12', '#00A5CF', '#7B2CBF', '#FF5D8F', '#2EC4B6', '#FF9F1C', '#3A86FF', '#8AC926', '#FB5607', '#C77DFF'],
+  patterns: ['solid', 'stripes', 'dots', 'checks', 'zigzag', 'rings'],
+  symbols: ['✓', '★', '♪', '♥', '✦', '☺', '⚡', '✿', '♫', '☀']
+};
+function markStyle(taskId, i) {
+  let h = 2166136261; for (const ch of taskId + ':' + i) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  h >>>= 0;
+  const c = MARK_FUN.colours[h % MARK_FUN.colours.length], pat = MARK_FUN.patterns[(h >>> 5) % MARK_FUN.patterns.length], sym = MARK_FUN.symbols[(h >>> 9) % MARK_FUN.symbols.length];
+  return { c, pat, sym };
+}
+function markingBoxes(t, compact) {
+  const m = t.marking;
+  if (!m || !m.total) return `<form class="inline-form mark-set" data-form="mark-set" data-id="${t.id}"><input class="input" name="n" type="number" min="1" max="400" inputmode="numeric" placeholder="How many to mark?" aria-label="How many to mark" style="max-width:190px"><button class="btn small" type="submit">Make boxes</button></form>`;
+  const done = (m.done || []).length;
+  return `<div class="mark-head"><b>${done} of ${m.total} marked</b><span class="mark-bar"><i style="width:${Math.round(done / m.total * 100)}%"></i></span>
+      ${done === m.total ? `<button class="btn small primary" data-action="toggle-task" data-id="${t.id}">All marked. Tick it off</button>` : ''}
+      <span class="mini"><button data-action="mark-add" data-id="${t.id}" data-d="-1" aria-label="One fewer box">−</button><button data-action="mark-add" data-id="${t.id}" data-d="1" aria-label="One more box">+</button></span></div>
+    <div class="mark-grid ${compact ? 'compact' : ''}">${Array.from({ length: m.total }, (_, i) => { const on = (m.done || []).includes(i); const fx = on ? markStyle(t.id, i) : null; return `<button class="mark-box ${on ? 'on p-' + fx.pat : ''}" ${on ? `style="--mc:${fx.c}"` : ''} data-action="mark-t" data-id="${t.id}" data-i="${i}" aria-pressed="${on}" aria-label="${m.labels && m.labels[i] ? esc(m.labels[i]) : 'Piece ' + (i + 1)}${on ? ', marked' : ''}">${on ? `<span>${fx.sym}</span>` : i + 1}</button>`; }).join('')}</div>`;
+}
+function markingRow(t) {
+  return `<div class="mark-item"><div class="row" style="border:0;padding:0 0 6px"><button class="check" data-action="toggle-task" data-id="${t.id}" aria-label="Mark ${esc(t.title)} done"></button><div class="row-main"><button class="row-title" data-action="open-task" data-id="${t.id}">${esc(t.title)}</button></div>${t.due ? `<span class="chip ${D.diff(t.due) < 0 ? 'late' : D.diff(t.due) <= 1 ? 'warn' : ''}">${D.diff(t.due) < 0 ? `${plural(-D.diff(t.due), 'day')} late` : D.label(t.due)}</span>` : ''}</div>${markingBoxes(t, true)}</div>`;
+}
+/** "Mark Year 8 rhythm tests (28)" or "28 essays" sets up 28 boxes. */
+function markingFromText(s) { const m = String(s).match(/\((\d{1,3})\)|\b(\d{1,3})\s*(tests?|papers?|students?|assignments?|essays?|scripts?|submissions?|books?|pieces?|reports?|performances?|compositions?)\b/i); const n = m ? +(m[1] || m[2]) : 0; return n > 0 && n <= 400 ? n : 0; }
 function viewTeaching() {
   const st = S(), open = st.tasks.filter(t => t.category === 'teaching');
   const todo = open.filter(t => t.status === 'todo');
@@ -2742,7 +2837,7 @@ function viewTeaching() {
   </div>
   <div class="grid g-3 section-gap">
     <section class="panel"><h2>Lessons to plan</h2>${rows(of('lesson'), { noCat: true, est: true }, 'No lessons waiting to be planned.')}</section>
-    <section class="panel"><h2>Assessments and marking</h2>${rows(of('assessment'), { noCat: true, est: true }, 'No marking on the list.')}</section>
+    <section class="panel"><h2>Assessments and marking</h2>${of('assessment').length ? of('assessment').map(markingRow).join('') : '<p class="empty">No marking on the list.</p>'}</section>
     <section class="panel"><h2>Resources to create</h2>${rows(of('resource'), { noCat: true, est: true }, 'No resources waiting.')}</section>
   </div>
   ${other.length ? `<section class="panel section-gap"><h2>Other teaching tasks</h2>${rows(other, { noCat: true, showType: true })}</section>` : ''}
@@ -3891,13 +3986,13 @@ function viewFitness() {
         <label class="field">Note<input class="input" name="notes" placeholder="Optional"></label>
         <div class="full ex-wrap"><div class="extras-head"><b>What you did</b><span class="muted">Exercise, sets, reps and weight. Leave empty for a run or walk.</span></div>
           <datalist id="ex-names">${[...new Set(S().fitness.workouts.flatMap(w => (w.exercises || []).map(x => x.name)))].map(n => `<option value="${esc(n)}">`).join('')}</datalist>
-          <div id="ex-rows">${exRowHtml()}</div>
+          <div id="ex-rows" class="ex-rows">${exRowHtml()}</div>
           <button type="button" class="btn small ghost" data-action="ex-row">Add another exercise</button></div>
         <div class="full"><button class="btn primary" type="submit">Log workout</button></div>
       </form>
       <h3>Recent</h3>
       ${plannedWorkouts().length ? `<p class="muted" style="margin:0 0 6px;font-size:14px">Coming up from your calendar: ${esc(listJoin(plannedWorkouts().slice(0, 3).map(x => `${x.title} ${D.label(x.date)}${x.time ? ' ' + D.time(x.time) : ''}`)))}.</p>` : ''}
-      <ul class="rows">${allWorkouts().slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${esc(w.type)}, ${w.minutes} min${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
+      <ul class="rows">${allWorkouts().slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${w.fromCal ? `${esc(w.type)}, ${w.minutes} min` : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${esc(w.type)}, ${w.minutes} min</button>`}${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
     </section>
   </div>
   <div class="grid g-3 section-gap">
@@ -3919,6 +4014,182 @@ function viewFitness() {
 }
 
 /* --- Someday --- */
+/* ---------- Budget: one fortnight at a time, laid out like Mitch's spreadsheet ----------
+   Transferred = Budget − Current saved (unless typed); % of income = Actual used ÷ total income;
+   Remaining = total income − everything transferred (aim for $0: every dollar has a job). */
+const BUD_SECS = [['fixed', 'Core expenses (Fixed)'], ['variable', 'Core expenses (Variable)'], ['seasonal', 'Seasonal and upcoming']];
+const r2 = n => Math.round((+n || 0) * 100) / 100;
+const money2 = n => (n < 0 ? '−' : '') + '$' + Math.abs(r2(n)).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const budTr = i => i.transferred != null && i.transferred !== '' ? +i.transferred : Math.max(0, r2((+i.budget || 0) - (+i.saved || 0)));
+const budLeft = i => r2((+i.saved || 0) + budTr(i) - (+i.actual || 0));
+function budFns() { return S().budget.fns.slice().sort((a, b) => a.start.localeCompare(b.start)); }
+function budActive() {
+  const b = S().budget, fns = budFns(); if (!fns.length) return null;
+  let f = fns.find(x => x.id === b.activeId);
+  if (!f) f = fns.slice().reverse().find(x => x.start <= D.today()) || fns[fns.length - 1];
+  return f;
+}
+function budTotals(fn) {
+  const income = r2(fn.income.reduce((a, i) => a + (+i.amount || 0), 0));
+  const allocated = r2(fn.items.reduce((a, i) => a + budTr(i), 0)), spent = r2(fn.items.reduce((a, i) => a + (+i.actual || 0), 0));
+  const bySec = Object.fromEntries(BUD_SECS.map(([k]) => [k, { tr: r2(fn.items.filter(i => i.sec === k).reduce((a, i) => a + budTr(i), 0)), actual: r2(fn.items.filter(i => i.sec === k).reduce((a, i) => a + (+i.actual || 0), 0)), budget: r2(fn.items.filter(i => i.sec === k).reduce((a, i) => a + (+i.budget || 0), 0)) }]));
+  return { income, allocated, spent, remaining: r2(income - allocated), bySec };
+}
+const fnEnd = fn => D.add(fn.start, 14);
+const fnLabel = fn => { const a = D.parse(fn.start), b = D.parse(fnEnd(fn)); const f = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' }); return `${f(a)} – ${f(b)}`; };
+/** Paydays from your calendar ("Payday" events) help pick where a fortnight starts. */
+function lastPayday() { const pd = allCalEvents().filter(e => /pay ?day/i.test(e.title) && e.date <= D.today()).map(e => e.date).sort(); return pd[pd.length - 1] || null; }
+function newFortnight(from, start) {
+  const fn = { id: uid('fn'), start, income: [], items: [] };
+  if (from) {
+    fn.income = from.income.map(i => ({ id: uid('bi'), name: i.name, amount: /salary|wage|pay/i.test(i.name) ? +i.amount || 0 : 0 }));
+    fn.items = from.items.filter(i => i.sec !== 'seasonal' || budLeft(i) > 0.004)
+      .map(i => ({ id: uid('bb'), sec: i.sec, name: i.name, budget: +i.budget || 0, saved: Math.max(0, budLeft(i)), transferred: null, actual: null }));
+  } else {
+    fn.income = ['Salary', 'Doordash', 'Gigs', 'Other'].map(n => ({ id: uid('bi'), name: n, amount: 0 }));
+  }
+  return fn;
+}
+function gigsPaidIn(fn) { const a = fn.start, b = D.add(fn.start, 13); return S().gigs.filter(g => g.paid && (g.paidAt || g.date) >= a && (g.paidAt || g.date) <= b); }
+function billsIn(fn) {
+  const a = fn.start, b = D.add(fn.start, 13), have = new Set(fn.items.map(i => i.name.toLowerCase()));
+  return allCalEvents().filter(e => evKind(e) === 'bill' && e.date >= a && e.date <= b)
+    .map(e => ({ id: e.id, name: e.title.replace(/\$\s?[\d,]+(\.\d+)?/, '').replace(/\s+(comes out|due)\s*$/i, '').trim() || e.title, amount: e.amount || 0, date: e.date }))
+    .filter(x => !have.has(x.name.toLowerCase()));
+}
+const bNum = (v, fid, ph, extra = '') => `<input class="input bnum" inputmode="decimal" data-change="bud-field" data-fid="${fid}" value="${v == null || v === '' ? '' : r2(v).toFixed(2)}" placeholder="${ph ?? ''}" ${extra}>`;
+function budSectionTile(fn, sec, label, t) {
+  const items = fn.items.filter(i => i.sec === sec);
+  return `<section class="panel"><h2>${label}</h2>
+    <div class="scroll-x"><table class="tbl btbl bsec"><thead><tr><th>Item</th><th class="num">Budget per FN</th><th class="num">Current saved</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">% of income</th><th></th></tr></thead><tbody>
+    ${items.map(i => `<tr class="bitem">
+      <td class="bcell-name"><input class="input bname" data-change="bud-field" data-fid="i:${i.id}:name" value="${esc(i.name)}" aria-label="Item name"></td>
+      <td class="num" data-label="Budget per FN">${bNum(i.budget, `i:${i.id}:budget`, '0')}</td>
+      <td class="num" data-label="Current saved">${bNum(i.saved, `i:${i.id}:saved`, '0')}</td>
+      <td class="num" data-label="Transferred">${bNum(i.transferred, `i:${i.id}:transferred`, r2((+i.budget || 0) - (+i.saved || 0)).toFixed(2), `title="Leave empty to use Budget − Current saved"`)}</td>
+      <td class="num" data-label="Actual used">${bNum(i.actual, `i:${i.id}:actual`, '—')}</td>
+      <td class="num muted bpct">${t.income ? ((+i.actual || 0) / t.income * 100).toFixed(1) + '%' : '—'}</td>
+      <td class="bdel"><button class="linkbtn danger-link" tabindex="-1" data-action="bud-del" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">×</button></td></tr>`).join('')}
+    <tr class="tot"><td>Total</td><td class="num">${money2(t.bySec[sec].budget)}</td><td></td><td class="num">${money2(t.bySec[sec].tr)}</td><td class="num">${money2(t.bySec[sec].actual)}</td><td class="num">${t.income ? (t.bySec[sec].actual / t.income * 100).toFixed(1) + '%' : '—'}</td><td></td></tr>
+    </tbody></table></div>
+    <form class="inline-form" data-form="bud-add" data-sec="${sec}" style="margin-top:10px"><input class="input" name="name" placeholder="Add an item, e.g. ${sec === 'fixed' ? 'Rent' : sec === 'variable' ? 'Groceries' : 'Strings, or SG1 - New computer'}" aria-label="New item"><input class="input bnum" name="budget" inputmode="decimal" placeholder="Budget" aria-label="Budget"><button class="btn small" type="submit">Add</button></form>
+  </section>`;
+}
+function viewBudget() {
+  const fns = budFns(), fn = budActive();
+  const head = `<div class="vhead"><div><h1>Budget</h1><p>One fortnight at a time.</p></div></div>`;
+  if (!fn) {
+    const pd = lastPayday() || D.today();
+    return head + `<section class="panel"><h2>Start budgeting</h2>
+      <form class="inline-form" data-form="bud-first"><label class="field" style="flex-direction:row;align-items:center;gap:8px">Fortnight starts<input class="input" type="date" name="start" value="${pd}"></label><button class="btn primary" type="submit">Start this fortnight</button></form>
+      <div class="inline-form" style="margin-top:12px"><button class="btn" data-action="bud-import">Import from my Excel budget</button></div></section>`;
+  }
+  const t = budTotals(fn), i = fns.findIndex(x => x.id === fn.id), gigs = gigsPaidIn(fn), gigSum = r2(gigs.reduce((a, g) => a + (gigFee(g) || 0), 0));
+  const gigRow = fn.income.find(x => /gig/i.test(x.name)), bills = billsIn(fn);
+  const remCls = Math.abs(t.remaining) < 0.005 ? 'ok' : t.remaining > 0 ? 'warn' : 'bad';
+  return head + `
+  <div class="bud-nav">
+    <button class="btn small" data-action="bud-go" data-d="-1" ${i <= 0 ? 'disabled' : ''} aria-label="Previous fortnight">←</button>
+    <select class="input" data-change="bud-pick" aria-label="Choose a fortnight">${fns.map(f => `<option value="${f.id}" ${f.id === fn.id ? 'selected' : ''}>${fnLabel(f)}</option>`).join('')}</select>
+    <button class="btn small" data-action="bud-go" data-d="1" ${i >= fns.length - 1 ? 'disabled' : ''} aria-label="Next fortnight">→</button>
+    <button class="btn small primary" data-action="bud-new">Start next fortnight</button>
+    <button class="btn small ghost" data-action="bud-import">Import from Excel</button>
+    <button class="btn small ghost danger-link" data-action="bud-remove" data-id="${fn.id}">Delete this fortnight</button>
+  </div>
+  <section class="panel"><h2>This fortnight</h2>
+    <div class="money bud-sum">
+      <div><span>Total income</span><b>${money2(t.income)}</b></div>
+      <div><span>Total transferred</span><b>${money2(t.allocated)}</b></div>
+      <div class="rem ${remCls}"><span>Remaining</span><b>${money2(t.remaining)}</b><small>${remCls === 'ok' ? 'All allocated' : remCls === 'warn' ? 'Still to allocate' : 'Over-allocated'}</small></div>
+      <div><span>Actual used</span><b>${money2(t.spent)}</b><small>${t.income ? (t.spent / t.income * 100).toFixed(0) + '% of income' : ''}</small></div>
+    </div>
+    ${gigSum && (!gigRow || Math.abs((+gigRow.amount || 0) - gigSum) > 0.004) ? `<div class="notice"><span>${plural(gigs.length, 'gig')} paid you ${money2(gigSum)} this fortnight.</span><button class="btn small" data-action="bud-gigs" data-v="${gigSum}">Use for Gigs income</button></div>` : ''}
+    ${bills.length ? `<div class="notice"><span>Bills due this fortnight: ${esc(listJoin(bills.map(b => `${b.name}${b.amount ? ' ' + money2(b.amount) : ''} (${D.label(b.date)})`)))}.</span><button class="btn small" data-action="bud-bills">Add to Seasonal</button></div>` : ''}
+  </section>
+  <section class="panel"><h2>Income</h2>
+    <div class="scroll-x"><table class="tbl btbl"><thead><tr><th>Source</th><th class="num">Amount</th><th></th></tr></thead><tbody>
+    ${fn.income.map(x => `<tr><td><input class="input bname" data-change="bud-field" data-fid="n:${x.id}:name" value="${esc(x.name)}" aria-label="Income source"></td><td class="num">${bNum(x.amount, `n:${x.id}:amount`, '0')}</td><td><button class="linkbtn danger-link" tabindex="-1" data-action="bud-del-inc" data-id="${x.id}" aria-label="Remove ${esc(x.name)}">×</button></td></tr>`).join('')}
+    <tr class="tot"><td>Total income</td><td class="num">${money2(t.income)}</td><td></td></tr></tbody></table></div>
+    <form class="inline-form" data-form="bud-add-inc" style="margin-top:10px"><input class="input" name="name" placeholder="Add income, e.g. Tax refund" aria-label="New income source"><input class="input bnum" name="amount" inputmode="decimal" placeholder="Amount" aria-label="Amount"><button class="btn small" type="submit">Add</button></form>
+  </section>
+  ${BUD_SECS.map(([k, l]) => budSectionTile(fn, k, l, t)).join('')}
+  <section class="panel"><h2>All fortnights</h2>
+    <div class="scroll-x"><table class="tbl"><thead><tr><th>Fortnight</th><th class="num">Income</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">Remaining</th></tr></thead><tbody>
+    ${fns.slice().reverse().map(f => { const x = budTotals(f); return `<tr class="${f.id === fn.id ? 'is-cur' : ''}"><td><button class="linkbtn" data-action="bud-open" data-id="${f.id}">${fnLabel(f)}</button></td><td class="num">${money2(x.income)}</td><td class="num">${money2(x.allocated)}</td><td class="num">${money2(x.spent)}</td><td class="num ${Math.abs(x.remaining) < 0.005 ? '' : x.remaining > 0 ? 'warn-t' : 'pri'}">${money2(x.remaining)}</td></tr>`; }).join('')}
+    </tbody></table></div>
+  </section>`;
+}
+/** Reads fortnight blocks from the Excel budget (rows as a grid of cell values). */
+function parseBudgetSheet(rows, today) {
+  const txt = v => typeof v === 'string' ? v.trim() : '';
+  const num = v => typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' && !isNaN(+v.replace(/[$,\s]/g, '')) ? +v.replace(/[$,\s]/g, '') : null);
+  const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+  const toDate = label => {
+    const m = String(label).toLowerCase().match(/(\d{1,2})\s*(?:st|nd|rd|th)?\s+([a-z]+)/); if (!m) return null;
+    const mi = MONTHS.findIndex(x => x.startsWith(m[2].slice(0, 3))); if (mi < 0) return null;
+    const t = D.parse(today || D.today()); let y = t.getFullYear();
+    let d = new Date(y, mi, +m[1]); if (d - t > 60 * 864e5) d = new Date(y - 1, mi, +m[1]);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  const out = [];
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    for (let c = 0; c < row.length; c++) {
+      if (!/^income$/i.test(txt(row[c])) || !/budget/i.test(txt(row[c + 2]))) continue;
+      let label = ''; for (let k = r - 1; k >= 0 && !label; k--) label = txt((rows[k] || [])[c]);
+      const start = toDate(label); if (!start) continue;
+      const fn = { id: uid('fn'), start, income: [], items: [], imported: label };
+      let sec = null;
+      for (let k = r + 1; k < rows.length; k++) {
+        const R = rows[k] || [], name = txt(R[c]), lab2 = txt(R[c + 2]);
+        if (/^(total income|total expenses|remaining)$/i.test(lab2)) break;
+        if (!name) continue;
+        if (/^t\w{1,4}l\s+income$/i.test(name)) { sec = 'gap'; continue; }   // "TOTAL income" (or "TOAL income")
+        if (/core/i.test(name) && /fixed/i.test(name)) { sec = 'fixed'; continue; }
+        if (/variable/i.test(name)) { sec = 'variable'; continue; }
+        if (/seasonal|upcoming/i.test(name)) { sec = 'seasonal'; continue; }
+        if (/^total$/i.test(name)) continue;
+        if (!sec) { fn.income.push({ id: uid('bi'), name, amount: r2(num(R[c + 1]) || 0) }); continue; }
+        if (sec === 'gap') continue;
+        const b = num(R[c + 2]), s = num(R[c + 3]), t = num(R[c + 4]), a = num(R[c + 5]);
+        if ([b, s, t, a].every(x => x == null)) continue;
+        const auto = Math.max(0, r2((b || 0) - (s || 0)));
+        fn.items.push({ id: uid('bb'), sec, name, budget: r2(b || 0), saved: r2(s || 0), transferred: t == null || Math.abs(t - auto) < 0.005 ? null : r2(t), actual: a == null ? null : r2(a) });
+      }
+      out.push(fn);
+    }
+  }
+  return out;
+}
+async function importBudgetFile(file) {
+  try {
+    await loadScript(LIBS.xlsx);
+    const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    let found = [];
+    wb.SheetNames.forEach(n => { found = found.concat(parseBudgetSheet(window.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null }))); });
+    if (!found.length) { toast('Couldn’t find any fortnights in that file. It needs "Income" and "Budget Per FN" headings like your budget sheet.'); return; }
+    const st = S(), snap = Store.snapshot(), have = new Map(st.budget.fns.map(f => [f.start, f]));
+    let added = 0, replaced = 0;
+    found.forEach(f => { const old = have.get(f.start); if (old) { Object.assign(old, { income: f.income, items: f.items, imported: f.imported }); replaced++; } else { st.budget.fns.push(f); added++; } });
+    st.budget.activeId = found[found.length - 1].id && (have.get(found[found.length - 1].start) || found[found.length - 1]).id;
+    commit(); toast(`Imported ${plural(added, 'fortnight')}${replaced ? `, updated ${replaced}` : ''}`, snap);
+  } catch (e) { toast(e && e.message === 'load' ? 'Couldn’t load the spreadsheet reader. It needs the internet the first time.' : 'Couldn’t read that file.'); }
+}
+function budField(el) {
+  const [kind, id, f] = el.dataset.fid.split(':'), fn = budActive(); if (!fn) return;
+  const obj = kind === 'n' ? fn.income.find(x => x.id === id) : fn.items.find(x => x.id === id); if (!obj) return;
+  if (f === 'name') obj.name = el.value.trim() || obj.name;
+  else { const raw = el.value.replace(/[$,\s]/g, ''); obj[f] = raw === '' ? (f === 'transferred' || f === 'actual' ? null : 0) : r2(+raw || 0); }
+  Store.save(); rerenderKeepFocus();
+}
+/** Re-draw after an edit without losing your place (Tab moves on as normal). */
+function rerenderKeepFocus() {
+  setTimeout(() => {
+    const a = document.activeElement, fid = a && a.dataset && a.dataset.fid, sel = a && typeof a.selectionStart === 'number' ? [a.selectionStart, a.selectionEnd] : null, y = window.scrollY;
+    render(); window.scrollTo(0, y);
+    if (fid) { const n = document.querySelector(`[data-fid="${CSS.escape(fid)}"]`); if (n) { n.focus(); if (sel) try { n.setSelectionRange(0, n.value.length); } catch (e) {} } }
+  }, 0);
+}
 function viewSomeday() {
   const st = S();
   const ideas = st.tasks.filter(t => t.category === 'someday' && t.status === 'todo');
@@ -3971,6 +4242,7 @@ const fmtSize = n => n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.r
 function taskExtrasHtml(t) {
   const steps = t.steps || [], files = t.files || [], done = steps.filter(s => s.done).length;
   return `<div class="extras">
+    ${t.type === 'assessment' ? `<div class="extras-head"><b>Marking</b></div>${markingBoxes(t, false)}<div style="height:14px"></div>` : ''}
     <div class="extras-head"><b>Steps</b><span class="muted">${steps.length ? `${done} of ${steps.length} done` : 'Break it into smaller pieces to tick off'}</span></div>
     ${steps.length ? `<ul class="rows">${steps.map((s, i) => `<li class="row ${s.done ? 'is-done' : ''}"><button type="button" class="check" data-action="step-t" data-id="${t.id}" data-i="${i}" aria-label="Toggle ${esc(s.text)}"></button><div class="row-main"><span class="row-title" style="cursor:default">${esc(s.text)}</span></div><span class="mini"><button type="button" data-action="step-mv" data-id="${t.id}" data-i="${i}" data-d="-1" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button><button type="button" data-action="step-mv" data-id="${t.id}" data-i="${i}" data-d="1" aria-label="Move down" ${i < steps.length - 1 ? '' : 'disabled'}>↓</button><button type="button" data-action="step-del" data-id="${t.id}" data-i="${i}" aria-label="Delete step">×</button></span></li>`).join('')}</ul>` : ''}
     <div class="inline-form" style="margin-top:8px"><input class="input" id="step-new" placeholder="Add a step, then press Enter" aria-label="Add a step" data-enter="step-add" data-id="${t.id}"><button type="button" class="btn small" data-action="step-add" data-id="${t.id}">Add step</button></div>
@@ -4024,6 +4296,23 @@ function liftsPanel() {
   if (!list.length) return '';
   return `<section class="panel section-gap"><h2>Your lifts</h2><div class="scroll-x"><table class="tbl"><thead><tr><th>Exercise</th><th class="num">Last</th><th class="num">Best</th><th class="num">Change</th><th>Last done</th></tr></thead><tbody>
     ${list.map(e => `<tr><td>${esc(e.name)}</td><td class="num">${e.last} kg</td><td class="num">${e.best} kg</td><td class="num">${e.count > 1 ? `${e.last - e.first >= 0 ? '+' : ''}${Math.round((e.last - e.first) * 10) / 10} kg` : '—'}</td><td>${D.label(e.date)}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+/* ---------- Editing a logged workout ---------- */
+function openWorkoutModal(id) {
+  const w = S().fitness.workouts.find(x => x.id === id); if (!w) return;
+  const types = ['Gym', 'Run', 'Walk', 'Swim', 'Bike', 'Yoga', 'Other'];
+  $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="wo-title">
+    <div class="modal-head"><h2 id="wo-title">Edit workout</h2><button class="btn small ghost" data-action="close">Close</button></div>
+    <form class="form-grid" data-form="workout-edit" data-id="${w.id}">
+      <label class="field">Date<input class="input" type="date" name="date" value="${w.date}"></label>
+      <label class="field">Type<select class="input" name="type">${[...new Set(types.concat([w.type]))].map(t => `<option ${t === w.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <label class="field">Minutes<input class="input" type="number" min="1" name="minutes" value="${w.minutes || 30}"></label>
+      <label class="field">Note<input class="input" name="notes" value="${esc(w.notes || '')}"></label>
+      <div class="full ex-wrap"><div class="extras-head"><b>What you did</b></div>
+        <div class="ex-rows">${(w.exercises && w.exercises.length ? w.exercises : [{}]).map(x => exRowHtml(x)).join('')}</div>
+        <button type="button" class="btn small ghost" data-action="ex-row">Add another exercise</button></div>
+      <div class="modal-foot full"><button class="btn primary" type="submit">Save</button><button class="btn ghost danger-link" type="button" data-action="wo-del" data-id="${w.id}">Delete workout</button></div>
+    </form></div></div>`;
 }
 function openAudit() {
   const f = lifeAudit();
@@ -4394,9 +4683,9 @@ const ACTIONS = {
     if (n.trim() && n.trim() !== k.split(':').slice(1).join(':')) names[k] = n.trim().slice(0, 60); else delete names[k];
     Store.save(); render();
   },
-  'tile-arrange'() { arranging = !arranging; render(); },
-  'tile-reset'() { const st = S(); if (st.settings.tiles) delete st.settings.tiles[VIEW]; Store.save(); render(); toast('Layout reset for this page'); },
-  'tile-move'(el) { const lay = tileLayout(), order = tileOrderNow(), i = order.indexOf(el.dataset.k), j = i + +el.dataset.d; if (i < 0 || j < 0 || j >= order.length) return; [order[i], order[j]] = [order[j], order[i]]; lay.order = order; Store.save(); render(); },
+  'tile-arrange'(el) { if (el && el.closest && el.closest('.sheet')) closeOverlay(); arranging = !arranging; render(); if (arranging && isPhone()) window.scrollTo({ top: 0, behavior: 'smooth' }); },
+  'tile-reset'() { const st = S(); if (st.settings.tiles) delete st.settings.tiles[layoutKey()]; Store.save(); render(); toast('Layout reset for this page'); },
+  'tile-move'(el) { const k = el.dataset.k, lay = tileLayout(), order = tileOrderNow(), i = order.indexOf(k), j = i + +el.dataset.d; if (i < 0 || j < 0 || j >= order.length) return; [order[i], order[j]] = [order[j], order[i]]; lay.order = order; Store.save(); render(); const s = document.querySelector(`.board > section[data-tkey="${CSS.escape(k)}"]`); if (s) s.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); },
   'tile-span'(el) { const lay = tileLayout(); lay.span[el.dataset.k] = +el.dataset.n; lay.order = tileOrderNow(); Store.save(); render(); },
   'panel-toggle'(el) {
     if (arranging) return;
@@ -4417,15 +4706,27 @@ const ACTIONS = {
   async 'att-dl'(el) { const t = taskById(el.dataset.id), f = t && t.files.find(x => x.id === el.dataset.f); const b = f && await FileSync.get(f.id); if (b) saveFile(b, f.name); else toast('Couldn’t find that file.'); },
   'att-del'(el) { const t = taskById(el.dataset.id); if (!t) return; const f = t.files.find(x => x.id === el.dataset.f); t.files = t.files.filter(x => x.id !== el.dataset.f); Store.save(); render(); refreshTaskExtras(t.id); if (f) { ReceiptDB.del(f.id).catch(() => {}); if (f.cloud) FileSync.trash(f.id); toast(`Removed ${f.name}`); } },
   'att-close'() { const b = $('#att-preview'); if (b) b.innerHTML = ''; },
-  'ex-row'() { const box = $('#ex-rows'); if (box) { box.insertAdjacentHTML('beforeend', exRowHtml()); box.lastElementChild.querySelector('input').focus(); } },
-  'ex-del'(el) { const row = el.closest('.ex-row'), box = $('#ex-rows'); if (!row || !box) return; if (box.children.length > 1) row.remove(); else row.querySelectorAll('input').forEach(i => { i.value = ''; }); },
+  'ex-row'(el) { const box = (el && el.closest('form') || document).querySelector('.ex-rows'); if (box) { box.insertAdjacentHTML('beforeend', exRowHtml()); box.lastElementChild.querySelector('input').focus(); } },
+  'ex-del'(el) { const row = el.closest('.ex-row'), box = el.closest('.ex-rows'); if (!row || !box) return; if (box.children.length > 1) row.remove(); else row.querySelectorAll('input').forEach(i => { i.value = ''; }); },
   'wo-detail'(el) {
     const f = $('form[data-form=workout]'); if (!f) return;
     f.elements.date.value = el.dataset.date; f.elements.minutes.value = el.dataset.min || 45;
     const opt = [...f.elements.type.options].find(o => o.value.toLowerCase() === String(el.dataset.type).toLowerCase()); f.elements.type.value = opt ? opt.value : 'Gym';
     f.scrollIntoView({ behavior: 'smooth', block: 'center' }); f.querySelector('[name=ex_name]')?.focus();
   },
-  'wo-del'(el) { const snap = Store.snapshot(); S().fitness.workouts = S().fitness.workouts.filter(w => w.id !== el.dataset.id); commit(); toast('Workout deleted', snap); },
+  'wo-del'(el) { const snap = Store.snapshot(); S().fitness.workouts = S().fitness.workouts.filter(w => w.id !== el.dataset.id); closeOverlay(); commit(); toast('Workout deleted', snap); },
+  'wo-edit'(el) { openWorkoutModal(el.dataset.id); },
+  'bud-go'(el) { const fns = budFns(), i = fns.findIndex(x => x.id === budActive().id) + +el.dataset.d; if (fns[i]) { S().budget.activeId = fns[i].id; Store.save(); render(); } },
+  'bud-open'(el) { S().budget.activeId = el.dataset.id; Store.save(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
+  'bud-new'() { const cur = budFns().slice(-1)[0], st = S(), snap = Store.snapshot(); const f = newFortnight(cur, cur ? D.add(cur.start, 14) : (lastPayday() || D.today())); st.budget.fns.push(f); st.budget.activeId = f.id; commit(); toast(`Started ${fnLabel(f)}. Leftovers carried into Current saved.`, snap); },
+  'bud-remove'(el) { const st = S(), snap = Store.snapshot(), f = st.budget.fns.find(x => x.id === el.dataset.id); if (!f) return; st.budget.fns = st.budget.fns.filter(x => x.id !== f.id); st.budget.activeId = null; commit(); toast(`Deleted ${fnLabel(f)}`, snap); },
+  'bud-del'(el) { const fn = budActive(), snap = Store.snapshot(); fn.items = fn.items.filter(x => x.id !== el.dataset.id); commit(); toast('Item removed', snap); },
+  'bud-del-inc'(el) { const fn = budActive(), snap = Store.snapshot(); fn.income = fn.income.filter(x => x.id !== el.dataset.id); commit(); toast('Income removed', snap); },
+  'bud-gigs'(el) { const fn = budActive(); let g = fn.income.find(x => /gig/i.test(x.name)); if (!g) { g = { id: uid('bi'), name: 'Gigs', amount: 0 }; fn.income.push(g); } g.amount = r2(+el.dataset.v); commit(); toast('Gigs income filled in'); },
+  'bud-bills'() { const fn = budActive(), snap = Store.snapshot(), bills = billsIn(fn); bills.forEach(b => fn.items.push({ id: uid('bb'), sec: 'seasonal', name: b.name, budget: r2(b.amount), saved: 0, transferred: null, actual: null })); commit(); toast(`${plural(bills.length, 'bill')} added to Seasonal`, snap); },
+  'bud-import'() { $('#budget-file').click(); },
+  'mark-t'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; const i = +el.dataset.i, d = t.marking.done || (t.marking.done = []); const k = d.indexOf(i); if (k >= 0) d.splice(k, 1); else d.push(i); Store.save(); render(); refreshTaskExtras(t.id); if (d.length === t.marking.total) toast(`All ${t.marking.total} marked for ${t.title}`); },
+  'mark-add'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; t.marking.total = Math.max(1, Math.min(400, t.marking.total + +el.dataset.d)); t.marking.done = (t.marking.done || []).filter(i => i < t.marking.total); Store.save(); render(); refreshTaskExtras(t.id); },
   'month-fold'(el) { const s = monthOpenSet(el.dataset.kind), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
   'pay-month'(el) { const s = payOpenSet(), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
   'pay-all'(el) { const st = S(); st.settings.payOpen = el.dataset.open === '1' ? [...new Set(st.gigs.map(g => g.date.slice(0, 7)))] : []; Store.save(); render(); },
@@ -4512,7 +4813,7 @@ const TAB_ICONS = {
 function renderTabbar() {
   const bar = $('#tabbar'); if (!bar) return;
   const late = openTasks().filter(t => isActionable(t) && t.due && D.diff(t.due) < 0).length;
-  const inMore = !['today', 'teaching', 'music', 'life'].includes(VIEW);
+  const inMore = !['today', 'teaching', 'music', 'life'].includes(VIEW);   // budget, fitness, someday, inbox live under More
   bar.innerHTML = TABS.map(([id, label]) => {
     const on = id === 'more' ? inMore : VIEW === id;
     return `<button data-action="${id === 'more' ? 'more-open' : 'nav'}" data-view="${id}" ${on ? 'aria-current="page"' : ''}>
@@ -4525,8 +4826,10 @@ function openMoreSheet() {
   $('#overlay').innerHTML = `<div class="scrim sheet-scrim" data-action="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="More">
     <div class="sheet-grab" aria-hidden="true"></div>
     ${item('nav', 'Inbox', inboxN ? plural(inboxN, 'unsorted thought') : 'Dump thoughts and sort them', 'data-view="inbox"')}
+    ${item('nav', 'Budget', 'This fortnight’s money', 'data-view="budget"')}
     ${item('nav', 'Fitness', 'Workouts, lifts and weight', 'data-view="fitness"')}
     ${item('nav', 'Someday', 'Ideas and projects', 'data-view="someday"')}
+    ${['today', 'teaching', 'music', 'life', 'budget', 'fitness', 'someday', 'inbox'].includes(VIEW) ? item('tile-arrange', arranging ? 'Finish arranging' : 'Arrange tiles on this page', 'Reorder or rename tiles') : ''}
     <div class="sheet-sep"></div>
     ${item('cal-open', 'Calendar and sync', Sync.error || (Sync.lastOk ? `This ${deviceName()}: synced ${agoText(Sync.lastOk)}` : Cal.firstError() || ''))}
     ${item('ai-settings', 'Teaching partner settings', '')}
@@ -4706,6 +5009,18 @@ function boot() {
       });
       S().gigs.forEach(applyVenueDefaults);
       closeOverlay(); commit(); toast(`${plural(n, 'fee')} saved`, snap);
+    } else if (kind === 'mark-set') {
+      const t = taskById(f.dataset.id), n = Math.max(1, Math.min(400, +val('n') || 0)); if (!t || !n) return;
+      t.marking = { total: n, done: [] }; Store.save(); render(); refreshTaskExtras(t.id);
+    } else if (kind === 'bud-first') {
+      const f = newFortnight(null, val('start') || D.today()); st.budget.fns.push(f); st.budget.activeId = f.id; commit();
+    } else if (kind === 'bud-add') {
+      const fn = budActive(), name = val('name'); if (!fn || !name) return;
+      fn.items.push({ id: uid('bb'), sec: f.dataset.sec, name: cap(name), budget: r2(+val('budget').replace(/[$,]/g, '') || 0), saved: 0, transferred: null, actual: null });
+      commit(); setTimeout(() => $(`form[data-form=bud-add][data-sec="${f.dataset.sec}"] input[name=name]`)?.focus(), 0);
+    } else if (kind === 'bud-add-inc') {
+      const fn = budActive(), name = val('name'); if (!fn || !name) return;
+      fn.income.push({ id: uid('bi'), name: cap(name), amount: r2(+val('amount').replace(/[$,]/g, '') || 0) }); commit();
     } else if (kind === 'expense') {
       saveExpense(e.submitter && e.submitter.name === 'again');
     } else if (kind === 'tax-settings') {
@@ -4749,6 +5064,13 @@ function boot() {
     }
     else if (kind === 'unit') { if (!val('name')) return; st.units.push({ id: uid('u'), name: cap(val('name')), planned: 0, total: +val('total') || 8, lastActivity: D.today() }); commit(); }
     else if (kind === 'shop') { if (!val('t')) return; st.tasks.push({ id: uid('t'), title: cap(val('t')), category: scoreCats(val('t').toLowerCase(), ['music', 'health', 'teaching', 'personal']) || 'home', type: 'shopping', due: null, time: null, priority: 3, estimate: 5, notes: '', status: 'todo', createdAt: D.today(), doneAt: null, gigId: null, projectId: null, snoozed: null }); commit(); setTimeout(() => $('[data-form=shop] input')?.focus(), 0); }
+    else if (kind === 'workout-edit') {
+      const w = st.fitness.workouts.find(x => x.id === f.dataset.id); if (!w) return;
+      const snap = Store.snapshot();
+      w.exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
+      Object.assign(w, { date: val('date') || w.date, type: val('type') || w.type, minutes: +val('minutes') || w.minutes, notes: val('notes') });
+      closeOverlay(); commit(); toast('Workout updated', snap);
+    }
     else if (kind === 'workout') {
       const exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
       const type = f.elements.type.value === 'Other' && exercises.length ? 'Gym' : val('type');
@@ -4775,6 +5097,8 @@ function boot() {
     const kind = el.dataset.change;
     if (kind === 'setlist-pick') { activeSetlist = el.value; render(); }
     else if (kind === 'venues-fy') { S().settings.venuesFY = +el.value; Store.save(); render(); }
+    else if (kind === 'bud-field') { budField(el); }
+    else if (kind === 'bud-pick') { S().budget.activeId = el.value; Store.save(); render(); }
     else if (kind === 'exp-fy') { expFY = +el.value; openExpensesList(); }
     else if (kind === 'gig-cash') { const g = gigById(el.dataset.id); if (g) { const snap = Store.snapshot(); setCash(g, el.checked); commit(); toast(el.checked ? `${venueBaseName(g.venue)}: cash job, no invoice needed` : `${venueBaseName(g.venue)}: needs an invoice`, snap); } }
     else if (kind === 'teach-speak') { S().settings.speak = el.checked; Store.save(); if (!el.checked && 'speechSynthesis' in window) speechSynthesis.cancel(); }
@@ -4785,6 +5109,7 @@ function boot() {
     }
     else if (kind === 'gig-setlist') { gigById(el.dataset.id).setlistId = el.value || null; commit(); }
   });
+  $('#budget-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) importBudgetFile(f); });
   $('#attach-file').addEventListener('change', e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length && attTarget) addAttachments(attTarget, fl); });
   document.addEventListener('dragover', e => { if (e.target.closest && e.target.closest('#att-drop')) e.preventDefault(); });
   document.addEventListener('drop', e => { const z = e.target.closest && e.target.closest('#att-drop'); if (z) { e.preventDefault(); addAttachments(z.dataset.id, e.dataTransfer.files); } });
