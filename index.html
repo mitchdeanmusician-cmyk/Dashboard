@@ -604,7 +604,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .bud-sum{grid-template-columns:repeat(4,minmax(0,1fr))}
 .inline-form .bnum{flex:0 0 130px;width:130px}
 @media (max-width:860px){.bud-sum{grid-template-columns:1fr 1fr}}
-.bud-sum .rem.ok b{color:var(--accent)}.bud-sum .rem.warn b{color:var(--warn)}.bud-sum .rem.bad b{color:var(--danger)}
+.bud-sum .rem.ok b,.bud-sum .rem.left b{color:var(--accent)}.bud-sum .rem.bad b{color:var(--danger)}
+.ok-t{color:var(--accent)}
 .btbl td{padding:4px 6px;vertical-align:middle}
 .btbl .input{padding:6px 8px;font-size:14.5px;border-radius:8px}
 .btbl .bname{min-width:170px}
@@ -649,6 +650,29 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
   .btbl.bsec tr.tot td.num::before{font-size:12px;color:var(--muted);margin-right:4px}
   .btbl.bsec tr.tot td:nth-child(2)::before{content:'Budget'}.btbl.bsec tr.tot td:nth-child(4)::before{content:'Transferred'}.btbl.bsec tr.tot td:nth-child(5)::before{content:'Used'}
 }
+
+.row-del{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:4px 6px;border-radius:8px;margin-left:2px;opacity:0;transition:opacity .15s}
+.row:hover .row-del,.row:focus-within .row-del{opacity:1}
+.row-del:hover{color:var(--danger);background:var(--danger-soft)}
+@media (hover:none){.row-del{opacity:.55}}
+.tt-block b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tt-block.short{flex-direction:row;align-items:center;gap:6px;padding:2px 7px}
+.tt-block.short b{-webkit-line-clamp:1;font-size:12px}
+.tt-block.short span{font-size:11px;white-space:nowrap}
+.bnum.is-auto{color:var(--ink-2);background:var(--surface-2);font-style:italic}
+.bname-wrap{display:flex;align-items:center;gap:4px}
+.bnote-btn{background:none;border:0;color:var(--muted);padding:4px 6px;border-radius:6px;font-size:14px;opacity:.55}
+.bnote-btn.has{color:var(--accent);opacity:1}
+.bnote-btn:hover{background:var(--surface-2);opacity:1}
+.bnote{font-size:12.5px;color:var(--ink-2);margin:3px 2px 0;white-space:pre-wrap}
+.pie-wrap{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.pie{width:200px;height:200px;flex:none}
+.pie-legend{list-style:none;margin:0;padding:0;flex:1;min-width:220px;display:grid;gap:6px}
+.pie-legend li{display:grid;grid-template-columns:14px 1fr auto 42px;gap:8px;align-items:center;font-size:14.5px}
+.pie-legend i{width:12px;height:12px;border-radius:3px}
+.pie-legend b{font-variant-numeric:tabular-nums}.pie-legend em{font-style:normal;color:var(--muted);text-align:right;font-size:13px}
+.tbl tr.fy-row td{background:var(--surface-2)}
+.week .rest i{background:repeating-linear-gradient(45deg,var(--surface-2) 0 4px,color-mix(in srgb,var(--c-health) 30%,var(--surface)) 4px 8px);border:1px solid color-mix(in srgb,var(--c-health) 40%,transparent)}
 </style>
 </head>
 <body>
@@ -1134,6 +1158,7 @@ function createProject(title, category, fromTaskId) {
 }
 
 function fileItem(p) {
+  if (p && p.category === 'teaching' && p.type !== 'assessment' && /^mark(ing)?\b/i.test(p.title || '')) p.type = 'assessment';
   if (p && p.type === 'assessment' && !p.marking) { const n = markingFromText(p.raw || p.title); if (n) { p.marking = { total: n, done: [] }; p.title = p.title.replace(/\s*\(\d{1,3}\)\s*/, ' ').trim(); } }
   const st = S();
   if (p.type === 'song') { st.songs.push({ id: uid('song'), title: p.songTitle || p.title.replace(/^Learn\s+/i, ''), artist: '', status: 'learning', progress: 0, addedAt: D.today() }); return 'Songs to learn'; }
@@ -1620,8 +1645,9 @@ function calRehearsalsFor(g) {
 const calWorkouts = () => { const nowD = D.today(), nowT = D.nowHM(); return Object.entries(S().calHistory).filter(([, x]) => x.kind === 'workout' && (x.date < nowD || (x.date === nowD && (x.endTime || x.time || '23:59') <= nowT))).map(([id, x]) => ({ id: 'cal_' + id, date: x.date, type: x.title, minutes: x.minutes, notes: `From your ${x.cal} calendar`, fromCal: true })); };
 const plannedWorkouts = () => { const nowD = D.today(), nowT = D.nowHM(); return Object.values(S().calHistory).filter(x => x.kind === 'workout' && (x.date > nowD || (x.date === nowD && (x.time || '00:00') > nowT))).sort(byDate); };
 /** Logged workouts plus calendar workouts that have happened (one per day and title). */
+const restDays = () => S().fitness.workouts.filter(w => w.rest);
 function allWorkouts() {
-  const logged = S().fitness.workouts, seen = new Set(logged.map(w => w.date + '|' + String(w.type).toLowerCase()));
+  const logged = S().fitness.workouts.filter(w => !w.rest), seen = new Set(logged.map(w => w.date + '|' + String(w.type).toLowerCase()));
   return logged.concat(calWorkouts().filter(w => !seen.has(w.date + '|' + String(w.type).toLowerCase())));
 }
 function calEvents() {
@@ -2013,7 +2039,7 @@ const Sync = {
   enabled() { return location.protocol === 'https:' && Cal.checked && !Cal.available && !!Feed.url() && S().settings.syncOff !== true; },
   payload() {
     const st = S(), cal = st.calendar || {};
-    return { ...st, calendar: { ...cal, events: {}, syncedAt: {} }, settings: { ...st.settings, apiKey: undefined } };
+    return { ...st, calendar: { ...cal, events: {}, syncedAt: {} }, settings: { ...st.settings, apiKey: undefined, openaiKey: undefined } };
   },
   errorText(kind, msg) {
     if (kind === 'script') return `The script had a problem saving: ${msg || 'unknown error'}`;
@@ -2031,11 +2057,12 @@ const Sync = {
     return d;
   },
   apply(d, quiet) {
-    const st = S(), keep = { events: st.calendar.events, syncedAt: st.calendar.syncedAt, feedUrl: st.calendar.feedUrl, apiKey: st.settings.apiKey };
+    const st = S(), keep = { events: st.calendar.events, syncedAt: st.calendar.syncedAt, feedUrl: st.calendar.feedUrl, apiKey: st.settings.apiKey, openaiKey: st.settings.openaiKey, aiProvider: st.settings.aiProvider, openaiModel: st.settings.openaiModel };
     const next = migrate(d.data);
     next.calendar.events = keep.events || {}; next.calendar.syncedAt = keep.syncedAt || {};
     if (!next.calendar.feedUrl) next.calendar.feedUrl = keep.feedUrl;
     if (keep.apiKey) next.settings.apiKey = keep.apiKey;
+    ['openaiKey', 'aiProvider', 'openaiModel'].forEach(k => { if (keep[k]) next.settings[k] = keep[k]; });
     const from = d.data && d.data.meta && d.data.meta.device;
     next.meta = { rev: d.rev, updatedAt: d.updatedAt, device: from };
     Store.state = next; Store.saveLocal(); this.pending = false; this.lastFrom = from; this.lastFromAt = d.updatedAt;
@@ -2232,7 +2259,26 @@ function builtInIdeas(q) {
     source: 'bank'
   };
 }
+/** Which AI your own key uses: Claude (Anthropic) or ChatGPT (OpenAI). */
+const aiProvider = () => { const s = S().settings; return s.aiProvider === 'openai' && s.openaiKey ? 'openai' : s.apiKey ? 'claude' : s.openaiKey ? 'openai' : null; };
+const hasOwnAI = () => !!aiProvider();
+const OPENAI_MODEL = 'gpt-4o-mini';
+async function openaiApi(prompt) {
+  const content = Array.isArray(prompt) ? prompt.map(b => b.type === 'image' ? { type: 'image_url', image_url: { url: `data:${b.source.media_type};base64,${b.source.data}` } } : { type: 'text', text: b.text }) : prompt;
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + S().settings.openaiKey },
+    body: JSON.stringify({ model: S().settings.openaiModel || OPENAI_MODEL, max_tokens: 1500, messages: [{ role: 'user', content }] })
+  });
+  let data = null; try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    const msg = (data && data.error && data.error.message) || '';
+    throw { code: res.status === 401 ? 'bad_key' : res.status === 429 && /quota|billing/i.test(msg) ? 'billing' : res.status === 429 ? 'rate_limited' : /model/i.test(msg) ? 'model' : 'api', message: msg };
+  }
+  return (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+}
 async function directApi(prompt) {
+  if (aiProvider() === 'openai') return openaiApi(prompt);
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': S().settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
@@ -2247,7 +2293,8 @@ async function directApi(prompt) {
 }
 function teachErrorText(e) {
   if (e && e.code === 'bad_key') return 'Your API key wasn’t accepted. Check it in Teaching partner settings.';
-  if (e && e.code === 'billing') return 'Your Anthropic account needs credit before the API will answer.';
+  if (e && e.code === 'billing') return aiProvider() === 'openai' ? 'Your OpenAI account needs credit (or a higher usage limit) before the API will answer.' : 'Your Anthropic account needs credit before the API will answer.';
+  if (e && e.code === 'model') return `OpenAI didn’t recognise the model "${S().settings.openaiModel || OPENAI_MODEL}". Change it in Teaching partner settings.`;
   if (e && e.code === 'rate_limited') return 'Too many requests just now. Try again in a minute.';
   if (e && e.code === 'not_granted') return 'Claude access was declined for this view.';
   return 'Couldn’t reach the AI just now.';
@@ -2261,7 +2308,7 @@ async function teachSend(q) {
   let out, note = '';
   try {
     if (AI.ready) out = await AI.sample.json(teachPrompt(history, q), { modelTier: 'default' });
-    else if (st.settings.apiKey) out = parseTeachJson(await directApi(teachPrompt(history, q)));
+    else if (hasOwnAI()) out = parseTeachJson(await directApi(teachPrompt(history, q)));
     else out = builtInIdeas(q);
   } catch (e) {
     if (e && e.code === 'not_granted') AI.disable();
@@ -2269,7 +2316,7 @@ async function teachSend(q) {
     out = builtInIdeas(q);
   }
   const reply = (note ? note + '\n\n' : '') + String((out && out.reply) || '').trim();
-  st.teachChat.push({ role: 'assistant', text: reply, ideas: normIdeas(out && out.ideas), source: (out && out.source) || (AI.ready ? 'claude' : st.settings.apiKey ? 'api' : 'bank'), at: Date.now() });
+  st.teachChat.push({ role: 'assistant', text: reply, ideas: normIdeas(out && out.ideas), source: (out && out.source) || (AI.ready ? 'claude' : aiProvider() === 'openai' ? 'chatgpt' : st.settings.apiKey ? 'api' : 'bank'), at: Date.now() });
   st.teachChat = st.teachChat.slice(-40);
   teachBusy = false; Store.save(); render(); scrollTeach();
   if (st.settings.speak) speak(reply);
@@ -2310,7 +2357,7 @@ function ideaToTask(idea) {
 }
 function teachPanel() {
   const st = S(), log = st.teachChat;
-  const source = AI.ready ? 'Using Claude' : st.settings.apiKey ? 'Using your API key' : 'Built-in idea bank (add an AI key for tailored ideas)';
+  const source = AI.ready ? 'Using Claude' : aiProvider() === 'openai' ? 'Using ChatGPT' : st.settings.apiKey ? 'Using your API key' : 'Built-in idea bank (add an AI key for tailored ideas)';
   const chips = ['Lesson idea for Year 10 songwriting', 'A 10-minute warm-up for Year 8', 'How do I make Year 12 composition feedback faster?', 'Plan my first week back', 'An engaging rhythm activity'];
   const ideaCard = (i, mi, ii) => `<div class="idea-card"><b>${esc(i.title)}</b>${i.detail ? `<span>${esc(i.detail)}</span>` : ''}<div class="idea-meta">${esc(cap(i.kind))}${i.unit ? `, ${esc(i.unit)}` : ''}</div>
     <div class="inline-form"><button class="btn small" data-action="idea-add" data-m="${mi}" data-i="${ii}">Add to Teaching</button><button class="btn small ghost" data-action="idea-save" data-m="${mi}" data-i="${ii}">Save idea</button></div></div>`;
@@ -2334,16 +2381,24 @@ function teachPanel() {
   </section>`;
 }
 function openAiSettings() {
-  const st = S();
+  const st = S(), prov = aiProvider() || st.settings.aiProvider || 'claude';
   $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-title">
     <div class="modal-head"><h2 id="ai-title">Teaching partner</h2><button class="btn small ghost" data-action="close">Close</button></div>
-    ${AI.ready ? '<p>You’re using the dashboard inside Claude, so the teaching partner uses Claude through your Claude plan. Nothing to set up here.</p>' : `
-    <p>On your desktop copy, the teaching partner can use Claude through your own Anthropic API key. It's paid per use, usually a cent or two per question. Get a key at console.anthropic.com (API keys), add some credit, and paste it below. Without a key, it uses the built-in idea bank.</p>
-    <p class="muted" style="font-size:14px">The key is saved only in this browser on this computer and is sent only to Anthropic. Don't use this on a shared computer.</p>
-    <form class="form-grid" data-form="ai-key">
-      <label class="field full">API key<input class="input" type="password" name="key" value="${st.settings.apiKey ? '••••••••••••' : ''}" placeholder="sk-ant-…" autocomplete="off"></label>
-      <div class="modal-foot full"><button class="btn primary" type="submit">Save key</button>${st.settings.apiKey ? '<button class="btn ghost" type="button" data-action="ai-key-remove">Remove key</button>' : ''}</div>
+    ${AI.ready ? '<p>You’re using the dashboard inside Claude, so the teaching partner uses Claude through your Claude plan.</p>' : ''}
+    <div class="seg" role="group" aria-label="Which AI" style="margin-bottom:14px"><button class="${prov === 'claude' ? 'on' : ''}" data-action="ai-prov" data-p="claude">Claude</button><button class="${prov === 'openai' ? 'on' : ''}" data-action="ai-prov" data-p="openai">ChatGPT</button></div>
+    ${prov === 'openai' ? `
+    <p>Uses ChatGPT through your own OpenAI API key, paid per use (usually a fraction of a cent per question). This is separate from a ChatGPT Plus subscription: get a key at platform.openai.com (API keys) and add some credit.</p>
+    <form class="form-grid" data-form="ai-key" data-p="openai">
+      <label class="field full">OpenAI API key<input class="input" type="password" name="key" value="${st.settings.openaiKey ? '••••••••••••' : ''}" placeholder="sk-…" autocomplete="off"></label>
+      <label class="field full">Model<input class="input" name="model" value="${esc(st.settings.openaiModel || OPENAI_MODEL)}" placeholder="${OPENAI_MODEL}"></label>
+      <div class="modal-foot full"><button class="btn primary" type="submit">Save</button>${st.settings.openaiKey ? '<button class="btn ghost" type="button" data-action="ai-key-remove" data-p="openai">Remove key</button>' : ''}</div>
+    </form>` : `
+    <p>Uses Claude through your own Anthropic API key, paid per use (usually a cent or two per question). Get a key at console.anthropic.com (API keys) and add some credit.</p>
+    <form class="form-grid" data-form="ai-key" data-p="claude">
+      <label class="field full">Anthropic API key<input class="input" type="password" name="key" value="${st.settings.apiKey ? '••••••••••••' : ''}" placeholder="sk-ant-…" autocomplete="off"></label>
+      <div class="modal-foot full"><button class="btn primary" type="submit">Save</button>${st.settings.apiKey ? '<button class="btn ghost" type="button" data-action="ai-key-remove" data-p="claude">Remove key</button>' : ''}</div>
     </form>`}
+    <p class="muted" style="font-size:13.5px;margin-bottom:0">Keys stay on this device only. They aren’t synced or included in backups, so add them on each device you want to use. Don’t use this on a shared computer.</p>
   </div></div>`;
 }
 /* ---------- 6. Views ---------- */
@@ -2378,7 +2433,7 @@ function taskRow(t, o = {}) {
     <button class="check" data-action="toggle-task" data-id="${t.id}" aria-label="${t.status === 'done' ? 'Mark not done' : 'Mark done'}: ${esc(t.title)}"></button>
     <div class="row-main"><button class="row-title" data-action="open-task" data-id="${t.id}">${taskColor(t) ? `<i class="cdot" style="background:${taskColor(t)}"></i>` : ''}${esc(t.title)}</button>
       <div class="row-meta">${o.noCat ? '' : catTag(t.category)}${o.showType ? `<span>${TYPES[t.type] || ''}</span>` : ''}${g && !o.noGig ? `<span>${esc(g.venue)} gig</span>` : ''}${t.source === 'calendar' ? '<span>From calendar</span>' : ''}${(t.steps || []).length ? `<span>${t.steps.filter(s => s.done).length} of ${t.steps.length} steps</span>` : ''}${(t.files || []).length ? `<span>${plural(t.files.length, 'file')}</span>` : ''}${t.priority === 1 && t.status !== 'done' ? '<span class="pri">High priority</span>' : ''}${t.estimate && o.est ? `<span>${t.estimate} min</span>` : ''}</div></div>
-    ${o.noDue ? '' : dueChip(t)}</li>`;
+    ${o.noDue ? '' : dueChip(t)}<button class="row-del" data-action="del-task" data-id="${t.id}" aria-label="Delete ${esc(t.title)}" title="Delete">×</button></li>`;
 }
 const rows = (list, o, empty) => list.length ? `<ul class="rows">${list.map(t => taskRow(t, o)).join('')}</ul>` : `<p class="empty">${empty}</p>`;
 const sortByDue = (a, b) => (a.due || '9999').localeCompare(b.due || '9999') || (a.time || '99').localeCompare(b.time || '99') || a.priority - b.priority;
@@ -2626,12 +2681,12 @@ function calLine() {
 }
 function fitnessCard() {
   const f = S().fitness, ws = D.weekStart();
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((l, i) => { const d = D.add(ws, i); return { l, d, has: allWorkouts().some(w => w.date === d), planned: plannedWorkouts().some(x => x.date === d), today: d === D.today() }; });
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((l, i) => { const d = D.add(ws, i); return { l, d, has: allWorkouts().some(w => w.date === d), rest: restDays().some(w => w.date === d), planned: plannedWorkouts().some(x => x.date === d), today: d === D.today() }; });
   const n = allWorkouts().filter(w => w.date >= ws).length;
   const last = f.weights[f.weights.length - 1];
   return `<section class="panel"><h2>Fitness this week</h2>
     <div class="bigfig">${n} of ${f.goalPerWeek} workouts</div>
-    <div class="week">${days.map(d => `<div class="${d.has ? 'has' : d.planned ? 'planned' : ''} ${d.today ? 'today' : ''}" title="${d.has ? 'Workout done' : d.planned ? 'Workout in your calendar' : ''}"><i></i>${d.l}</div>`).join('')}</div>
+    <div class="week">${days.map(d => `<div class="${d.has ? 'has' : d.rest ? 'rest' : d.planned ? 'planned' : ''} ${d.today ? 'today' : ''}" title="${d.has ? 'Workout done' : d.rest ? 'Rest day' : d.planned ? 'Workout in your calendar' : ''}"><i></i>${d.l}</div>`).join('')}</div>
     ${last ? `<p style="margin:0 0 6px">${last.kg} kg <span class="muted">${D.rel(last.date)}</span></p>${weightChart(f.weights.slice(-8), 260, 60, false)}` : ''}
     <p style="margin:12px 0 0"><button class="btn small" data-action="nav" data-view="fitness">Log a workout</button></p></section>`;
 }
@@ -2698,7 +2753,7 @@ function previewHtml() {
 const TT_COLOURS = ['#4F68A6', '#86579A', '#2B7B82', '#3A8660', '#B7791F', '#C2410C', '#A33232', '#6B7280'];
 const toMin = t => { const [a, b] = String(t || '0:0').split(':').map(Number); return a * 60 + (b || 0); };
 const toHM = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
-const TT_PX = 1.15;   // pixels per minute
+const TT_PX = 1.6;   // pixels per minute (roomier, so short classes stay readable)
 function ttRange() {
   const tt = S().timetable; let lo = 8 * 60, hi = 15 * 60 + 30;
   tt.forEach(c => { lo = Math.min(lo, toMin(c.time)); hi = Math.max(hi, toMin(c.end || toHM(toMin(c.time) + 60))); });
@@ -2709,7 +2764,7 @@ function timetableGrid() {
   const hours = []; for (let m = lo; m <= hi; m += 60) hours.push(m);
   const block = c => {
     const s = toMin(c.time), e = toMin(c.end || toHM(s + 60)), col = c.color || TT_COLOURS[0];
-    return `<div class="tt-block" data-tt="${c.id}" style="top:${(s - lo) * TT_PX}px;height:${Math.max(18, (e - s) * TT_PX)}px;--c:${col}" title="${esc(c.title)}, ${D.time(c.time)} to ${D.time(toHM(e))}">
+    return `<div class="tt-block ${e - s < 40 ? 'short' : ''}" data-tt="${c.id}" style="top:${(s - lo) * TT_PX}px;height:${Math.max(26, (e - s) * TT_PX)}px;--c:${col}" title="${esc(c.title)}, ${D.time(c.time)} to ${D.time(toHM(e))}">
       <b>${esc(c.title)}</b><span>${D.time(c.time)}–${D.time(toHM(e))}</span><i class="tt-resize" aria-hidden="true"></i></div>`;
   };
   return `<div class="tt-wrap"><div class="tt-grid" style="--h:${H}px">
@@ -2806,10 +2861,15 @@ function markingBoxes(t, compact) {
     <div class="mark-grid ${compact ? 'compact' : ''}">${Array.from({ length: m.total }, (_, i) => { const on = (m.done || []).includes(i); const fx = on ? markStyle(t.id, i) : null; return `<button class="mark-box ${on ? 'on p-' + fx.pat : ''}" ${on ? `style="--mc:${fx.c}"` : ''} data-action="mark-t" data-id="${t.id}" data-i="${i}" aria-pressed="${on}" aria-label="${m.labels && m.labels[i] ? esc(m.labels[i]) : 'Piece ' + (i + 1)}${on ? ', marked' : ''}">${on ? `<span>${fx.sym}</span>` : i + 1}</button>`; }).join('')}</div>`;
 }
 function markingRow(t) {
-  return `<div class="mark-item"><div class="row" style="border:0;padding:0 0 6px"><button class="check" data-action="toggle-task" data-id="${t.id}" aria-label="Mark ${esc(t.title)} done"></button><div class="row-main"><button class="row-title" data-action="open-task" data-id="${t.id}">${esc(t.title)}</button></div>${t.due ? `<span class="chip ${D.diff(t.due) < 0 ? 'late' : D.diff(t.due) <= 1 ? 'warn' : ''}">${D.diff(t.due) < 0 ? `${plural(-D.diff(t.due), 'day')} late` : D.label(t.due)}</span>` : ''}</div>${markingBoxes(t, true)}</div>`;
+  return `<div class="mark-item"><div class="row" style="border:0;padding:0 0 6px"><button class="check" data-action="toggle-task" data-id="${t.id}" aria-label="Mark ${esc(t.title)} done"></button><div class="row-main"><button class="row-title" data-action="open-task" data-id="${t.id}">${esc(t.title)}</button></div>${t.due ? `<span class="chip ${D.diff(t.due) < 0 ? 'late' : D.diff(t.due) <= 1 ? 'warn' : ''}">${D.diff(t.due) < 0 ? `${plural(-D.diff(t.due), 'day')} late` : D.label(t.due)}</span>` : ''}<button class="row-del" data-action="del-task" data-id="${t.id}" aria-label="Delete ${esc(t.title)}" title="Delete">×</button></div>${markingBoxes(t, true)}</div>`;
 }
 /** "Mark Year 8 rhythm tests (28)" or "28 essays" sets up 28 boxes. */
-function markingFromText(s) { const m = String(s).match(/\((\d{1,3})\)|\b(\d{1,3})\s*(tests?|papers?|students?|assignments?|essays?|scripts?|submissions?|books?|pieces?|reports?|performances?|compositions?)\b/i); const n = m ? +(m[1] || m[2]) : 0; return n > 0 && n <= 400 ? n : 0; }
+function markingFromText(s) {
+  const t = String(s || ''), br = t.match(/\((\d{1,3})\)/);
+  if (br) return +br[1] > 0 && +br[1] <= 400 ? +br[1] : 0;
+  const m = t.match(/(?<!\b(?:year|yr|y)\s?)\b(\d{1,3})\s*(tests?|papers?|students?|assignments?|essays?|scripts?|submissions?|books?|pieces?|reports?|performances?|compositions?)\b/i);
+  const n = m ? +m[1] : 0; return n > 0 && n <= 400 ? n : 0;
+}
 function viewTeaching() {
   const st = S(), open = st.tasks.filter(t => t.category === 'teaching');
   const todo = open.filter(t => t.status === 'todo');
@@ -2939,7 +2999,7 @@ async function readSetlistImage(file) {
     const r = await AI.sample(SETLIST_IMAGE_PROMPT, { images: file, modelTier: 'default' });
     return r.text;
   }
-  if (S().settings.apiKey) {
+  if (hasOwnAI()) {
     const data = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(file); });
     const type = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) ? file.type : 'image/jpeg';
     return directApi([{ type: 'image', source: { type: 'base64', media_type: type, data } }, { type: 'text', text: SETLIST_IMAGE_PROMPT }]);
@@ -2968,7 +3028,7 @@ function setlistPreviewHtml() {
 function renderSetlistImport() {
   if (!setImport) return;
   const s = setImport, g = s.gigId && gigById(s.gigId);
-  const imgOk = AI.ready || !!S().settings.apiKey;
+  const imgOk = AI.ready || hasOwnAI();
   $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal wide" id="sl-modal" role="dialog" aria-modal="true" aria-labelledby="sl-title">
     <div class="modal-head"><h2 id="sl-title">Upload a setlist</h2><button class="btn small ghost" data-action="close">Close</button></div>
     <p class="muted" style="margin-top:0">Upload a text, Word, PDF, Excel or CSV file${imgOk ? ', or a photo of a handwritten setlist' : ''}, or paste the list below. One song per line works best; "Set 1", "Break" and "Encore" lines become section headings.</p>
@@ -3529,7 +3589,7 @@ async function readReceiptWithAI(file) {
     const caps = await AI.sample.limits().catch(() => null); if (!caps || !caps.images) return null;
     return AI.sample.json(RECEIPT_PROMPT, { images: file, modelTier: 'default' });
   }
-  if (S().settings.apiKey) {
+  if (hasOwnAI()) {
     const data = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(file); });
     const type = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) ? file.type : 'image/jpeg';
     const text = await directApi([{ type: 'image', source: { type: 'base64', media_type: type, data } }, { type: 'text', text: RECEIPT_PROMPT }]);
@@ -3544,7 +3604,7 @@ function openExpenseModal(id, kind) {
   renderExpenseModal();
 }
 function renderExpenseModal() {
-  const d = expDraft, trip = d.kind === 'trip', canRead = AI.ready || !!S().settings.apiKey;
+  const d = expDraft, trip = d.kind === 'trip', canRead = AI.ready || hasOwnAI();
   const pastGigs = S().gigs.filter(g => D.diff(g.date) <= 0).sort(byDate).reverse().slice(0, 40);
   $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" id="exp-modal" role="dialog" aria-modal="true" aria-labelledby="exp-title">
     <div class="modal-head"><h2 id="exp-title">${d.id ? 'Edit' : 'Add'} ${trip ? 'a trip' : 'an expense'}</h2><button class="btn small ghost" data-action="close">Close</button></div>
@@ -3577,7 +3637,7 @@ async function expReceiptChosen(file) {
   expDraftSync();
   if (file.size > 8e6) { expDraft.msg = 'That file is over 8 MB. Try a smaller photo or PDF.'; renderExpenseModal(); return; }
   expDraft.file = await shrinkImage(file); expDraft.fileType = expDraft.file.type || file.type; expDraft.receiptName = file.name;
-  expDraft.msg = ''; expDraft.busy = /^image\//.test(file.type) && (AI.ready || !!S().settings.apiKey); renderExpenseModal();
+  expDraft.msg = ''; expDraft.busy = /^image\//.test(file.type) && (AI.ready || hasOwnAI()); renderExpenseModal();
   if (!expDraft.busy) { if (/^image\//.test(file.type)) expDraft.msg = 'Receipt attached. Fill in the details below.'; renderExpenseModal(); return; }
   try {
     const r = await readReceiptWithAI(file);
@@ -3979,8 +4039,9 @@ function viewFitness() {
   <div class="grid g-2">
     ${fitnessCard().replace('<button class="btn small" data-action="nav" data-view="fitness">Log a workout</button>', '')}
     <section class="panel"><h2>Log a workout</h2>
+      <div class="inline-form" style="margin-bottom:10px"><button class="btn small" data-action="rest-day">Log a rest day today</button></div>
       <form class="form-grid" data-form="workout">
-        <label class="field">Type<select class="input" name="type">${['Run', 'Gym', 'Walk', 'Swim', 'Bike', 'Yoga', 'Sport', 'Other'].map(x => `<option>${x}</option>`).join('')}</select></label>
+        <label class="field">Type<select class="input" name="type">${['Run', 'Gym', 'Walk', 'Swim', 'Bike', 'Yoga', 'Sport', 'Other', 'Rest day'].map(x => `<option>${x}</option>`).join('')}</select></label>
         <label class="field">Minutes<input class="input" name="minutes" type="number" min="5" max="400" value="30"></label>
         <label class="field">Date<input class="input" name="date" type="date" value="${D.today()}"></label>
         <label class="field">Note<input class="input" name="notes" placeholder="Optional"></label>
@@ -3992,7 +4053,7 @@ function viewFitness() {
       </form>
       <h3>Recent</h3>
       ${plannedWorkouts().length ? `<p class="muted" style="margin:0 0 6px;font-size:14px">Coming up from your calendar: ${esc(listJoin(plannedWorkouts().slice(0, 3).map(x => `${x.title} ${D.label(x.date)}${x.time ? ' ' + D.time(x.time) : ''}`)))}.</p>` : ''}
-      <ul class="rows">${allWorkouts().slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${w.fromCal ? `${esc(w.type)}, ${w.minutes} min` : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${esc(w.type)}, ${w.minutes} min</button>`}${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
+      <ul class="rows">${allWorkouts().concat(restDays()).slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${w.fromCal ? `${esc(w.type)}, ${w.minutes} min` : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${w.rest ? '😴 Rest day' : `${esc(w.type)}, ${w.minutes} min`}</button>`}${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
     </section>
   </div>
   <div class="grid g-3 section-gap">
@@ -4017,6 +4078,20 @@ function viewFitness() {
 /* ---------- Budget: one fortnight at a time, laid out like Mitch's spreadsheet ----------
    Transferred = Budget − Current saved (unless typed); % of income = Actual used ÷ total income;
    Remaining = total income − everything transferred (aim for $0: every dollar has a job). */
+const BUD_TYPES = [
+  ['housing', 'Housing', '#4F68A6', /\b(rent|mortgage|rates|water|strata|body corp|electric|power|gas|home ?loan)\b/i],
+  ['groceries', 'Groceries', '#3A8660', /\b(groceries|grocery|food|supermarket|woolies|coles|aldi)\b/i],
+  ['leisure', 'Leisure', '#C77DFF', /\b(leisure|fun|entertainment|dining|takeaway|gig ticket|movies|birthday present to myself)\b/i],
+  ['bills', 'Bills and subscriptions', '#E4572E', /\b(spotify|netflix|disney|internet|phone|insurance|rego|registration|subscription|app|bill)\b/i],
+  ['transport', 'Transport', '#F3A712', /\b(fuel|petrol|car|toll|parking|uber|train|bus|maintenance|tyres?)\b/i],
+  ['family', 'Family and kids', '#FF5D8F', /\b(child support|kids?|swimming|parenting|school|evie|harry|birthday gift|present)\b/i],
+  ['music', 'Music and gear', '#00A5CF', /\b(strings|pedal|pedalboard|speaker|pa\b|guitar|amp|mic|cable|plugs?)\b/i],
+  ['savings', 'Savings and goals', '#2EC4B6', /\b(saving|savings|sg\d|goal|rainy day|backpay|buffer|emergency)\b/i],
+  ['debt', 'Debt and credit', '#8D6E63', /\b(credit|loan|lawyer|repayment|afterpay|zip|pay .* back|mediation)\b/i],
+  ['health', 'Health and fitness', '#8AC926', /\b(gym|doctor|dentist|physio|health|pharmacy|haircut)\b/i],
+  ['other', 'Other', '#9CA3AF', null]
+];
+const budTypeOf = i => i.type || (BUD_TYPES.find(t => t[3] && t[3].test(i.name)) || BUD_TYPES[BUD_TYPES.length - 1])[0];
 const BUD_SECS = [['fixed', 'Core expenses (Fixed)'], ['variable', 'Core expenses (Variable)'], ['seasonal', 'Seasonal and upcoming']];
 const r2 = n => Math.round((+n || 0) * 100) / 100;
 const money2 = n => (n < 0 ? '−' : '') + '$' + Math.abs(r2(n)).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -4042,7 +4117,9 @@ function lastPayday() { const pd = allCalEvents().filter(e => /pay ?day/i.test(e
 function newFortnight(from, start) {
   const fn = { id: uid('fn'), start, income: [], items: [] };
   if (from) {
-    fn.income = from.income.map(i => ({ id: uid('bi'), name: i.name, amount: /salary|wage|pay/i.test(i.name) ? +i.amount || 0 : 0 }));
+    fn.income = from.income.filter(i => !/^carried over/i.test(i.name)).map(i => ({ id: uid('bi'), name: i.name, amount: /salary|wage|pay/i.test(i.name) ? +i.amount || 0 : 0 }));
+    const left = budTotals(from).remaining;
+    if (left > 0.004) fn.income.push({ id: uid('bi'), name: 'Carried over from last fortnight', amount: r2(left) });
     fn.items = from.items.filter(i => i.sec !== 'seasonal' || budLeft(i) > 0.004)
       .map(i => ({ id: uid('bb'), sec: i.sec, name: i.name, budget: +i.budget || 0, saved: Math.max(0, budLeft(i)), transferred: null, actual: null }));
   } else {
@@ -4063,10 +4140,10 @@ function budSectionTile(fn, sec, label, t) {
   return `<section class="panel"><h2>${label}</h2>
     <div class="scroll-x"><table class="tbl btbl bsec"><thead><tr><th>Item</th><th class="num">Budget per FN</th><th class="num">Current saved</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">% of income</th><th></th></tr></thead><tbody>
     ${items.map(i => `<tr class="bitem">
-      <td class="bcell-name"><input class="input bname" data-change="bud-field" data-fid="i:${i.id}:name" value="${esc(i.name)}" aria-label="Item name"></td>
+      <td class="bcell-name"><div class="bname-wrap"><input class="input bname" data-change="bud-field" data-fid="i:${i.id}:name" value="${esc(i.name)}" aria-label="Item name"><button class="bnote-btn ${i.note ? 'has' : ''}" tabindex="-1" data-action="bud-note" data-id="${i.id}" aria-label="Notes for ${esc(i.name)}" title="${i.note ? esc(i.note) : 'Add a note'}">✎</button></div>${i.note ? `<div class="bnote">${esc(i.note)}</div>` : ''}</td>
       <td class="num" data-label="Budget per FN">${bNum(i.budget, `i:${i.id}:budget`, '0')}</td>
       <td class="num" data-label="Current saved">${bNum(i.saved, `i:${i.id}:saved`, '0')}</td>
-      <td class="num" data-label="Transferred">${bNum(i.transferred, `i:${i.id}:transferred`, r2((+i.budget || 0) - (+i.saved || 0)).toFixed(2), `title="Leave empty to use Budget − Current saved"`)}</td>
+      <td class="num" data-label="Transferred">${i.transferred == null || i.transferred === '' ? `<input class="input bnum is-auto" inputmode="decimal" data-change="bud-field" data-fid="i:${i.id}:transferred" value="${budTr(i).toFixed(2)}" title="Budget − Current saved. Type a different amount to override." data-auto="${budTr(i).toFixed(2)}">` : bNum(i.transferred, `i:${i.id}:transferred`, '0', `title="Typed amount. Clear it to go back to Budget − Current saved."`)}</td>
       <td class="num" data-label="Actual used">${bNum(i.actual, `i:${i.id}:actual`, '—')}</td>
       <td class="num muted bpct">${t.income ? ((+i.actual || 0) / t.income * 100).toFixed(1) + '%' : '—'}</td>
       <td class="bdel"><button class="linkbtn danger-link" tabindex="-1" data-action="bud-del" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">×</button></td></tr>`).join('')}
@@ -4074,6 +4151,92 @@ function budSectionTile(fn, sec, label, t) {
     </tbody></table></div>
     <form class="inline-form" data-form="bud-add" data-sec="${sec}" style="margin-top:10px"><input class="input" name="name" placeholder="Add an item, e.g. ${sec === 'fixed' ? 'Rent' : sec === 'variable' ? 'Groceries' : 'Strings, or SG1 - New computer'}" aria-label="New item"><input class="input bnum" name="budget" inputmode="decimal" placeholder="Budget" aria-label="Budget"><button class="btn small" type="submit">Add</button></form>
   </section>`;
+}
+function openBudNote(id) {
+  const fn = budActive(), i = fn && fn.items.find(x => x.id === id); if (!i) return;
+  $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="bn-title">
+    <div class="modal-head"><h2 id="bn-title">${esc(i.name)}</h2><button class="btn small ghost" data-action="close">Close</button></div>
+    <form class="form-grid" data-form="bud-note" data-id="${i.id}">
+      <label class="field full">Note<textarea class="input" name="note" rows="3" placeholder="e.g. Due 10 August, or what this was for">${esc(i.note || '')}</textarea></label>
+      <label class="field full">Type (for the spending chart)<select class="input" name="type">${BUD_TYPES.map(([k, l]) => `<option value="${k}" ${budTypeOf(i) === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="modal-foot full"><button class="btn primary" type="submit">Save</button></div>
+    </form></div></div>`;
+}
+/* Spending by type: a donut chart of Actual used */
+let budChartPeriod = 'fn';
+function budSpendTile(fn) {
+  const list = budChartPeriod === 'fy' ? budFns().filter(f => fyOfDate(f.start) === fyOfDate(fn.start)) : [fn];
+  const sums = {}; list.forEach(f => f.items.forEach(i => { const a = +i.actual || 0; if (a > 0) { const k = budTypeOf(i); sums[k] = (sums[k] || 0) + a; } }));
+  const rows = BUD_TYPES.map(([k, l, c]) => ({ k, l, c, v: r2(sums[k] || 0) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
+  const total = rows.reduce((a, x) => a + x.v, 0);
+  const R_ = 70, C = 2 * Math.PI * R_; let off = 0;
+  const arcs = rows.map(x => { const len = x.v / total * C, s = `<circle r="${R_}" cx="90" cy="90" fill="none" stroke="${x.c}" stroke-width="30" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}" transform="rotate(-90 90 90)"><title>${esc(x.l)}: ${money2(x.v)} (${Math.round(x.v / total * 100)}%)</title></circle>`; off += len; return s; }).join('');
+  return `<section class="panel"><h2>Spending by type</h2>
+    <div class="seg" role="group" aria-label="Period" style="margin-bottom:12px"><button class="${budChartPeriod === 'fn' ? 'on' : ''}" data-action="bud-chart" data-p="fn">This fortnight</button><button class="${budChartPeriod === 'fy' ? 'on' : ''}" data-action="bud-chart" data-p="fy">${fyRange(fyOfDate(fn.start)).label} financial year</button></div>
+    ${total ? `<div class="pie-wrap"><svg viewBox="0 0 180 180" class="pie" role="img" aria-label="Spending by type">${arcs}<text x="90" y="86" text-anchor="middle" font-size="12" fill="var(--muted)">Actual used</text><text x="90" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">${money2(total).replace('.00', '')}</text></svg>
+      <ul class="pie-legend">${rows.map(x => `<li><i style="background:${x.c}"></i><span>${esc(x.l)}</span><b>${money2(x.v)}</b><em>${Math.round(x.v / total * 100)}%</em></li>`).join('')}</ul></div>` : '<p class="empty">Fill in Actual used and your spending shows here.</p>'}
+  </section>`;
+}
+/* Export to Excel, laid out like the original spreadsheet (with working formulas) */
+const colName = n => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+function budgetSheetCells(fns) {
+  const cells = {}, put = (r, c, v) => { cells[colName(c) + (r + 1)] = v; };
+  let maxRow = 0;
+  fns.forEach((fn, b) => {
+    const c0 = b * 8, A = n => colName(c0 + n);
+    let r = 0;
+    put(r, c0, { v: fnLabel(fn).replace('–', '-') }); r += 2;
+    ['Income', '', 'Budget Per FN', 'Current saved', 'Transferred', 'Actual used', '% of income', 'Notes'].forEach((t, k) => t && put(r, c0 + k, { v: t, bold: true })); r++;
+    const inc0 = r; fn.income.forEach(x => { put(r, c0, { v: x.name }); put(r, c0 + 1, { v: r2(x.amount), num: true }); r++; });
+    const incTot = r; put(r, c0, { v: 'TOTAL income', bold: true }); put(r, c0 + 1, { f: fn.income.length ? `SUM(${A(1)}${inc0 + 1}:${A(1)}${r})` : '0', num: true, bold: true }); r++;
+    const IT = `$${A(1)}$${incTot + 1}`, trRanges = [];
+    BUD_SECS.forEach(([k, label]) => {
+      const items = fn.items.filter(i => i.sec === k);
+      put(r, c0, { v: label, bold: true }); r++;
+      const s0 = r;
+      items.forEach(i => {
+        const R1 = r + 1;
+        put(r, c0, { v: i.name }); put(r, c0 + 2, { v: r2(i.budget), num: true }); put(r, c0 + 3, { v: r2(i.saved), num: true });
+        put(r, c0 + 4, i.transferred == null || i.transferred === '' ? { f: `MAX(0,${A(2)}${R1}-${A(3)}${R1})`, num: true } : { v: r2(i.transferred), num: true });
+        if (i.actual != null && i.actual !== '') put(r, c0 + 5, { v: r2(i.actual), num: true });
+        put(r, c0 + 6, { f: `IF(${IT}=0,0,${A(5)}${R1}/${IT})`, pct: true });
+        if (i.note) put(r, c0 + 7, { v: i.note });
+        r++;
+      });
+      if (items.length) trRanges.push(`${A(4)}${s0 + 1}:${A(4)}${r}`);
+      put(r, c0, { v: 'Total', bold: true });
+      put(r, c0 + 5, { f: items.length ? `SUM(${A(5)}${s0 + 1}:${A(5)}${r})` : '0', num: true, bold: true });
+      put(r, c0 + 6, { f: `IF(${IT}=0,0,${A(5)}${r + 1}/${IT})`, pct: true, bold: true });
+      r += 2;
+    });
+    put(r, c0 + 2, { v: 'Total income', bold: true }); put(r, c0 + 4, { f: `${A(1)}${incTot + 1}`, num: true }); r++;
+    put(r, c0 + 2, { v: 'Total expenses', bold: true }); put(r, c0 + 4, { f: trRanges.length ? `SUM(${trRanges.join(',')})` : '0', num: true }); r++;
+    put(r, c0 + 2, { v: 'Remaining', bold: true }); put(r, c0 + 4, { f: `${A(4)}${r - 1}-${A(4)}${r}`, num: true, bold: true }); r++;
+    maxRow = Math.max(maxRow, r);
+  });
+  return { cells, lastCol: colName(fns.length * 8 - 1), lastRow: maxRow };
+}
+async function exportBudget(scope) {
+  const all = budFns(), fy = fyOfDate((budActive() || { start: D.today() }).start);
+  const fns = scope === 'all' ? all : all.filter(f => fyOfDate(f.start) === fy);
+  if (!fns.length) { toast('No fortnights to export.'); return; }
+  toast('Making your spreadsheet…');
+  try {
+    await loadScript(LIBS.xlsx);
+    const X = window.XLSX, { cells, lastCol, lastRow } = budgetSheetCells(fns), ws = {};
+    Object.entries(cells).forEach(([addr, c]) => {
+      const cell = c.f ? { t: 'n', f: c.f } : typeof c.v === 'number' ? { t: 'n', v: c.v } : { t: 's', v: String(c.v) };
+      if (c.num) cell.z = '$#,##0.00'; if (c.pct) cell.z = '0.0%';
+      ws[addr] = cell;
+    });
+    ws['!ref'] = `A1:${lastCol}${lastRow}`;
+    ws['!cols'] = fns.flatMap(() => [{ wch: 30 }, { wch: 11 }, { wch: 14 }, { wch: 13 }, { wch: 12 }, { wch: 12 }, { wch: 11 }, { wch: 24 }]);
+    const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Budget');
+    const name = scope === 'all' ? 'Budget (all fortnights).xlsx' : `Budget ${fyRange(fy).label.replace('–', '-')}.xlsx`;
+    const out = X.write(wb, { bookType: 'xlsx', type: 'array' });
+    const ok = await saveFile(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), name);
+    if (ok) toast(`${name} saved: ${plural(fns.length, 'fortnight')}, with working formulas.`);
+  } catch (e) { toast(e && e.message === 'load' ? 'Couldn’t load the spreadsheet tools. They need the internet the first time.' : 'Couldn’t make the spreadsheet.'); }
 }
 function viewBudget() {
   const fns = budFns(), fn = budActive();
@@ -4086,7 +4249,7 @@ function viewBudget() {
   }
   const t = budTotals(fn), i = fns.findIndex(x => x.id === fn.id), gigs = gigsPaidIn(fn), gigSum = r2(gigs.reduce((a, g) => a + (gigFee(g) || 0), 0));
   const gigRow = fn.income.find(x => /gig/i.test(x.name)), bills = billsIn(fn);
-  const remCls = Math.abs(t.remaining) < 0.005 ? 'ok' : t.remaining > 0 ? 'warn' : 'bad';
+  const remCls = t.remaining < -0.004 ? 'bad' : Math.abs(t.remaining) < 0.005 ? 'ok' : 'left';
   return head + `
   <div class="bud-nav">
     <button class="btn small" data-action="bud-go" data-d="-1" ${i <= 0 ? 'disabled' : ''} aria-label="Previous fortnight">←</button>
@@ -4094,13 +4257,14 @@ function viewBudget() {
     <button class="btn small" data-action="bud-go" data-d="1" ${i >= fns.length - 1 ? 'disabled' : ''} aria-label="Next fortnight">→</button>
     <button class="btn small primary" data-action="bud-new">Start next fortnight</button>
     <button class="btn small ghost" data-action="bud-import">Import from Excel</button>
+    <button class="btn small ghost" data-action="bud-export">Export to Excel</button>
     <button class="btn small ghost danger-link" data-action="bud-remove" data-id="${fn.id}">Delete this fortnight</button>
   </div>
   <section class="panel"><h2>This fortnight</h2>
     <div class="money bud-sum">
       <div><span>Total income</span><b>${money2(t.income)}</b></div>
       <div><span>Total transferred</span><b>${money2(t.allocated)}</b></div>
-      <div class="rem ${remCls}"><span>Remaining</span><b>${money2(t.remaining)}</b><small>${remCls === 'ok' ? 'All allocated' : remCls === 'warn' ? 'Still to allocate' : 'Over-allocated'}</small></div>
+      <div class="rem ${remCls}"><span>Remaining</span><b>${money2(t.remaining)}</b><small>${remCls === 'ok' ? 'All allocated' : remCls === 'left' ? 'Left to allocate' : 'Over-allocated'}</small></div>
       <div><span>Actual used</span><b>${money2(t.spent)}</b><small>${t.income ? (t.spent / t.income * 100).toFixed(0) + '% of income' : ''}</small></div>
     </div>
     ${gigSum && (!gigRow || Math.abs((+gigRow.amount || 0) - gigSum) > 0.004) ? `<div class="notice"><span>${plural(gigs.length, 'gig')} paid you ${money2(gigSum)} this fortnight.</span><button class="btn small" data-action="bud-gigs" data-v="${gigSum}">Use for Gigs income</button></div>` : ''}
@@ -4113,9 +4277,12 @@ function viewBudget() {
     <form class="inline-form" data-form="bud-add-inc" style="margin-top:10px"><input class="input" name="name" placeholder="Add income, e.g. Tax refund" aria-label="New income source"><input class="input bnum" name="amount" inputmode="decimal" placeholder="Amount" aria-label="Amount"><button class="btn small" type="submit">Add</button></form>
   </section>
   ${BUD_SECS.map(([k, l]) => budSectionTile(fn, k, l, t)).join('')}
+  ${budSpendTile(fn)}
   <section class="panel"><h2>All fortnights</h2>
     <div class="scroll-x"><table class="tbl"><thead><tr><th>Fortnight</th><th class="num">Income</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">Remaining</th></tr></thead><tbody>
-    ${fns.slice().reverse().map(f => { const x = budTotals(f); return `<tr class="${f.id === fn.id ? 'is-cur' : ''}"><td><button class="linkbtn" data-action="bud-open" data-id="${f.id}">${fnLabel(f)}</button></td><td class="num">${money2(x.income)}</td><td class="num">${money2(x.allocated)}</td><td class="num">${money2(x.spent)}</td><td class="num ${Math.abs(x.remaining) < 0.005 ? '' : x.remaining > 0 ? 'warn-t' : 'pri'}">${money2(x.remaining)}</td></tr>`; }).join('')}
+    ${[...new Set(fns.map(f => fyOfDate(f.start)))].sort((a, b) => b - a).map(y => { const list = fns.filter(f => fyOfDate(f.start) === y).reverse(), sum = k => list.reduce((a, f) => a + budTotals(f)[k], 0);
+      return `<tr class="fy-row"><td><b>${fyRange(y).label} financial year</b> <span class="muted">${plural(list.length, 'fortnight')}</span></td><td class="num"><b>${money2(sum('income'))}</b></td><td class="num"><b>${money2(sum('allocated'))}</b></td><td class="num"><b>${money2(sum('spent'))}</b></td><td class="num"><b>${money2(sum('remaining'))}</b></td></tr>`
+        + list.map(f => { const x = budTotals(f); return `<tr class="${f.id === fn.id ? 'is-cur' : ''}"><td><button class="linkbtn" data-action="bud-open" data-id="${f.id}">${fnLabel(f)}</button></td><td class="num">${money2(x.income)}</td><td class="num">${money2(x.allocated)}</td><td class="num">${money2(x.spent)}</td><td class="num ${x.remaining < -0.004 ? 'pri' : 'ok-t'}">${money2(x.remaining)}</td></tr>`; }).join(''); }).join('')}
     </tbody></table></div>
   </section>`;
 }
@@ -4179,6 +4346,7 @@ function budField(el) {
   const [kind, id, f] = el.dataset.fid.split(':'), fn = budActive(); if (!fn) return;
   const obj = kind === 'n' ? fn.income.find(x => x.id === id) : fn.items.find(x => x.id === id); if (!obj) return;
   if (f === 'name') obj.name = el.value.trim() || obj.name;
+  else if (f === 'transferred' && el.dataset.auto != null && Math.abs(r2(+el.value.replace(/[$,\s]/g, '') || 0) - +el.dataset.auto) < 0.005) { obj.transferred = null; }
   else { const raw = el.value.replace(/[$,\s]/g, ''); obj[f] = raw === '' ? (f === 'transferred' || f === 'actual' ? null : 0) : r2(+raw || 0); }
   Store.save(); rerenderKeepFocus();
 }
@@ -4300,7 +4468,7 @@ function liftsPanel() {
 /* ---------- Editing a logged workout ---------- */
 function openWorkoutModal(id) {
   const w = S().fitness.workouts.find(x => x.id === id); if (!w) return;
-  const types = ['Gym', 'Run', 'Walk', 'Swim', 'Bike', 'Yoga', 'Other'];
+  const types = ['Gym', 'Run', 'Walk', 'Swim', 'Bike', 'Yoga', 'Other', 'Rest day'];
   $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="wo-title">
     <div class="modal-head"><h2 id="wo-title">Edit workout</h2><button class="btn small ghost" data-action="close">Close</button></div>
     <form class="form-grid" data-form="workout-edit" data-id="${w.id}">
@@ -4662,7 +4830,8 @@ const ACTIONS = {
   'tidea-add'(el) { const i = S().teachIdeas.find(x => x.id === el.dataset.id); if (!i) return; ideaToTask(i); S().teachIdeas = S().teachIdeas.filter(x => x.id !== i.id); commit(); toast(`Added "${i.title}" to Teaching`); },
   'tidea-del'(el) { S().teachIdeas = S().teachIdeas.filter(x => x.id !== el.dataset.id); commit(); },
   'ai-settings': () => openAiSettings(),
-  'ai-key-remove'() { delete S().settings.apiKey; Store.save(); openAiSettings(); render(); toast('API key removed'); },
+  'ai-key-remove'(el) { delete S().settings[el.dataset.p === 'openai' ? 'openaiKey' : 'apiKey']; Store.save(); openAiSettings(); render(); toast('Key removed'); },
+  'ai-prov'(el) { S().settings.aiProvider = el.dataset.p; Store.saveLocal(); openAiSettings(); render(); },
   'calbill-paid'(el) { const st = S(), id = el.dataset.id; if (st.calPaid[id]) delete st.calPaid[id]; else st.calPaid[id] = D.today(); commit(); if (el.dataset.from === 'audit') openAudit(); },
   'bday-remind'(el) {
     const st = S(), e = allCalEvents().find(x => x.id === el.dataset.id); if (!e) return;
@@ -4716,17 +4885,34 @@ const ACTIONS = {
   },
   'wo-del'(el) { const snap = Store.snapshot(); S().fitness.workouts = S().fitness.workouts.filter(w => w.id !== el.dataset.id); closeOverlay(); commit(); toast('Workout deleted', snap); },
   'wo-edit'(el) { openWorkoutModal(el.dataset.id); },
+  'rest-day'() { const st = S(), snap = Store.snapshot(); if (st.fitness.workouts.some(w => w.rest && w.date === D.today())) { toast('Today is already a rest day'); return; } st.fitness.workouts.push({ id: uid('w'), date: D.today(), type: 'Rest day', minutes: 0, notes: '', exercises: [], rest: true }); commit(); toast('Rest day logged. Enjoy it.', snap); },
   'bud-go'(el) { const fns = budFns(), i = fns.findIndex(x => x.id === budActive().id) + +el.dataset.d; if (fns[i]) { S().budget.activeId = fns[i].id; Store.save(); render(); } },
   'bud-open'(el) { S().budget.activeId = el.dataset.id; Store.save(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
-  'bud-new'() { const cur = budFns().slice(-1)[0], st = S(), snap = Store.snapshot(); const f = newFortnight(cur, cur ? D.add(cur.start, 14) : (lastPayday() || D.today())); st.budget.fns.push(f); st.budget.activeId = f.id; commit(); toast(`Started ${fnLabel(f)}. Leftovers carried into Current saved.`, snap); },
+  'bud-new'() { const cur = budFns().slice(-1)[0], st = S(), snap = Store.snapshot(); const f = newFortnight(cur, cur ? D.add(cur.start, 14) : (lastPayday() || D.today())); st.budget.fns.push(f); st.budget.activeId = f.id; commit(); toast(`Started ${fnLabel(f)}. Leftover item money is in Current saved${f.income.some(x => /^carried over/i.test(x.name)) ? ', and unallocated money is carried over as income' : ''}.`, snap); },
   'bud-remove'(el) { const st = S(), snap = Store.snapshot(), f = st.budget.fns.find(x => x.id === el.dataset.id); if (!f) return; st.budget.fns = st.budget.fns.filter(x => x.id !== f.id); st.budget.activeId = null; commit(); toast(`Deleted ${fnLabel(f)}`, snap); },
   'bud-del'(el) { const fn = budActive(), snap = Store.snapshot(); fn.items = fn.items.filter(x => x.id !== el.dataset.id); commit(); toast('Item removed', snap); },
   'bud-del-inc'(el) { const fn = budActive(), snap = Store.snapshot(); fn.income = fn.income.filter(x => x.id !== el.dataset.id); commit(); toast('Income removed', snap); },
   'bud-gigs'(el) { const fn = budActive(); let g = fn.income.find(x => /gig/i.test(x.name)); if (!g) { g = { id: uid('bi'), name: 'Gigs', amount: 0 }; fn.income.push(g); } g.amount = r2(+el.dataset.v); commit(); toast('Gigs income filled in'); },
   'bud-bills'() { const fn = budActive(), snap = Store.snapshot(), bills = billsIn(fn); bills.forEach(b => fn.items.push({ id: uid('bb'), sec: 'seasonal', name: b.name, budget: r2(b.amount), saved: 0, transferred: null, actual: null })); commit(); toast(`${plural(bills.length, 'bill')} added to Seasonal`, snap); },
   'bud-import'() { $('#budget-file').click(); },
+  'bud-export'() {
+    const fy = fyOfDate((budActive() || { start: D.today() }).start);
+    $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="bx-title"><div class="modal-head"><h2 id="bx-title">Export to Excel</h2><button class="btn small ghost" data-action="close">Close</button></div>
+      <p class="muted" style="margin-top:0">Laid out like your spreadsheet, one fortnight per block, with working formulas.</p>
+      <div class="inline-form"><button class="btn primary" data-action="bud-export-go" data-s="fy">${fyRange(fy).label} financial year</button><button class="btn" data-action="bud-export-go" data-s="all">All fortnights</button></div></div></div>`;
+  },
+  'bud-export-go'(el) { closeOverlay(); exportBudget(el.dataset.s); },
+  'bud-note'(el) { openBudNote(el.dataset.id); },
+  'bud-chart'(el) { budChartPeriod = el.dataset.p; render(); },
   'mark-t'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; const i = +el.dataset.i, d = t.marking.done || (t.marking.done = []); const k = d.indexOf(i); if (k >= 0) d.splice(k, 1); else d.push(i); Store.save(); render(); refreshTaskExtras(t.id); if (d.length === t.marking.total) toast(`All ${t.marking.total} marked for ${t.title}`); },
   'mark-add'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; t.marking.total = Math.max(1, Math.min(400, t.marking.total + +el.dataset.d)); t.marking.done = (t.marking.done || []).filter(i => i < t.marking.total); Store.save(); render(); refreshTaskExtras(t.id); },
+  'del-task'(el) {
+    const st = S(), t = taskById(el.dataset.id); if (!t) return;
+    const snap = Store.snapshot(); st.tasks = st.tasks.filter(x => x.id !== t.id);
+    if (focus && focus.id === t.id) focus = null;
+    (t.files || []).forEach(f => { if (f.cloud) FileSync.trash(f.id); });
+    commit(); toast(`Deleted "${t.title}"`, snap);
+  },
   'month-fold'(el) { const s = monthOpenSet(el.dataset.kind), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
   'pay-month'(el) { const s = payOpenSet(), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
   'pay-all'(el) { const st = S(); st.settings.payOpen = el.dataset.open === '1' ? [...new Set(st.gigs.map(g => g.date.slice(0, 7)))] : []; Store.save(); render(); },
@@ -4788,7 +4974,7 @@ const ACTIONS = {
   'project-delete'(el) { const snap = Store.snapshot(); S().projects = S().projects.filter(p => p.id !== el.dataset.id); commit(); toast('Project deleted', snap); },
   // Data
   async export() {
-    const data = JSON.stringify({ ...S(), settings: { ...S().settings, apiKey: undefined } }, null, 2);
+    const data = JSON.stringify({ ...S(), settings: { ...S().settings, apiKey: undefined, openaiKey: undefined } }, null, 2);
     try { await saveFile(new Blob([data], { type: 'application/json' }), `mitchs-dashboard-backup-${D.today()}.json`); }
     catch (e) { toast('Couldn’t save the backup here.'); }
   },
@@ -5012,6 +5198,10 @@ function boot() {
     } else if (kind === 'mark-set') {
       const t = taskById(f.dataset.id), n = Math.max(1, Math.min(400, +val('n') || 0)); if (!t || !n) return;
       t.marking = { total: n, done: [] }; Store.save(); render(); refreshTaskExtras(t.id);
+    } else if (kind === 'bud-note') {
+      const fn = budActive(), i = fn && fn.items.find(x => x.id === f.dataset.id); if (!i) return;
+      i.note = f.elements.note.value.trim(); const ty = val('type'); i.type = ty === budTypeOf({ name: i.name }) ? undefined : ty;
+      closeOverlay(); commit();
     } else if (kind === 'bud-first') {
       const f = newFortnight(null, val('start') || D.today()); st.budget.fns.push(f); st.budget.activeId = f.id; commit();
     } else if (kind === 'bud-add') {
@@ -5036,9 +5226,16 @@ function boot() {
     } else if (kind === 'teach') {
       const q = val('q'); if (!q) return; f.elements.q.value = ''; teachSend(q); setTimeout(() => $('#teach-input')?.focus(), 0);
     } else if (kind === 'ai-key') {
-      const k = val('key'); if (!k || /^•+$/.test(k)) { closeOverlay(); return; }
+      const k = val('key'), openai = f.dataset.p === 'openai', keep = !k || /^•+$/.test(k);
+      if (openai) {
+        if (!keep && !/^sk-/.test(k)) { toast('That doesn’t look like an OpenAI API key. It should start with sk-'); return; }
+        if (!keep) st.settings.openaiKey = k;
+        st.settings.openaiModel = (val('model') || OPENAI_MODEL).trim(); st.settings.aiProvider = 'openai';
+        closeOverlay(); Store.saveLocal(); render(); toast(st.settings.openaiKey ? 'Saved. Your teaching partner now uses ChatGPT.' : 'Add your OpenAI key to use ChatGPT.'); return;
+      }
+      if (keep) { closeOverlay(); return; }
       if (!/^sk-ant-/.test(k)) { toast('That doesn’t look like an Anthropic API key. It should start with sk-ant-'); return; }
-      st.settings.apiKey = k; closeOverlay(); commit(); toast('API key saved. Your teaching partner is ready.');
+      st.settings.apiKey = k; st.settings.aiProvider = 'claude'; closeOverlay(); Store.saveLocal(); render(); toast('API key saved. Your teaching partner is ready.');
     } else if (kind === 'tt-block') {
       const title = val('title'), time = val('time'), end = val('end'); if (!title || !time) return;
       const e0 = end && toMin(end) > toMin(time) ? end : toHM(toMin(time) + 60), color = (f.querySelector('input[name=color]:checked') || {}).value || TT_COLOURS[0];
@@ -5068,13 +5265,13 @@ function boot() {
       const w = st.fitness.workouts.find(x => x.id === f.dataset.id); if (!w) return;
       const snap = Store.snapshot();
       w.exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
-      Object.assign(w, { date: val('date') || w.date, type: val('type') || w.type, minutes: +val('minutes') || w.minutes, notes: val('notes') });
+      Object.assign(w, { date: val('date') || w.date, type: val('type') || w.type, minutes: val('type') === 'Rest day' ? 0 : +val('minutes') || w.minutes, notes: val('notes'), rest: val('type') === 'Rest day' || undefined });
       closeOverlay(); commit(); toast('Workout updated', snap);
     }
     else if (kind === 'workout') {
       const exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
-      const type = f.elements.type.value === 'Other' && exercises.length ? 'Gym' : val('type');
-      st.fitness.workouts.push({ id: uid('w'), date: val('date') || D.today(), type, minutes: +val('minutes') || 30, notes: val('notes'), exercises });
+      const type = f.elements.type.value === 'Other' && exercises.length ? 'Gym' : val('type'), rest = type === 'Rest day';
+      st.fitness.workouts.push({ id: uid('w'), date: val('date') || D.today(), type, minutes: rest ? 0 : +val('minutes') || 30, notes: val('notes'), exercises: rest ? [] : exercises, rest: rest || undefined });
       commit(); toast(`${type} logged${exercises.length ? ` with ${plural(exercises.length, 'exercise')}` : ''}`);
     }
     else if (kind === 'weight') { const kg = parseFloat(val('kg')); if (!(kg > 0)) return; const w = st.fitness.weights.filter(x => x.date !== D.today()); w.push({ date: D.today(), kg: Math.round(kg * 10) / 10 }); st.fitness.weights = w.sort(byDate); commit(); }
