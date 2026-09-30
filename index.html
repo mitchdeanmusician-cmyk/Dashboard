@@ -679,6 +679,50 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .remind-row input{max-width:240px}
 .remind-row .seg button{font-size:13px;padding:5px 9px}
 .remind-tag{color:var(--accent)}
+
+.step-due-btn{background:none;border:0;color:var(--muted);padding:4px 6px;border-radius:6px;font-size:14px;opacity:.6}
+.step-due-btn:hover{background:var(--surface-2);opacity:1}
+.step-due-edit{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.step-due-edit .input{width:auto;padding:5px 8px;font-size:14px}
+.step-add #step-new-due,.step-add #step-new-time{flex:0 0 auto;width:auto;padding:6px 8px;font-size:14px;color:var(--ink-2)}
+.wo-form .wo-dist{display:none}
+.wo-form[data-kind="Cardio"] .wo-dist,.wo-form[data-kind="Walking"] .wo-dist,.wo-form[data-kind="Hiking"] .wo-dist,.wo-form[data-kind="Run"] .wo-dist,.wo-form[data-kind="Swim"] .wo-dist,.wo-form[data-kind="Bike"] .wo-dist{display:flex}
+.wo-form:not([data-kind="Weights"]):not([data-kind="Gym"]):not([data-kind="Other"]) .ex-wrap{display:none}
+.wo-copy{font-size:13px;margin-left:10px}
+.line-chart{width:100%;height:auto;display:block}
+
+/* ---- Idea boards ---- */
+.folder-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.folder-tab{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px 10px 4px 4px;padding:7px 12px;font-size:14px;color:var(--ink-2)}
+.folder-tab i{width:10px;height:10px;border-radius:3px;background:var(--fc)}
+.folder-tab em{font-style:normal;font-size:12px;color:var(--muted);background:var(--surface-2);border-radius:99px;padding:0 7px}
+.folder-tab.on{border-color:var(--fc);color:var(--ink);font-weight:600;background:color-mix(in srgb,var(--fc) 12%,var(--surface))}
+.folder-tab.add{border-style:dashed;color:var(--muted)}
+.folder-tab.drop{outline:3px solid var(--accent);outline-offset:2px;transform:scale(1.05)}
+.board-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.board-scroll{overflow:auto;border-radius:14px}
+.board-canvas{position:relative;min-width:900px;background-color:color-mix(in srgb,#C7A26B 22%,var(--surface));background-image:radial-gradient(rgba(0,0,0,.07) 1px,transparent 1.5px);background-size:18px 18px;border-radius:14px;box-shadow:inset 0 0 0 1px var(--line)}
+.board-empty{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--ink-2);pointer-events:none;font-size:15px}
+.sticky{position:absolute;width:210px;min-height:120px;padding:10px 12px 12px;background:var(--sc);color:#1d2320;border-radius:4px 4px 10px 4px;box-shadow:0 2px 3px rgba(0,0,0,.12),0 8px 18px rgba(0,0,0,.12);cursor:grab;touch-action:none;user-select:none;transform:rotate(-.6deg);transition:box-shadow .15s,transform .15s}
+.sticky:nth-child(3n){transform:rotate(.7deg)}.sticky:nth-child(4n){transform:rotate(-.2deg)}
+.sticky:hover{box-shadow:0 3px 5px rgba(0,0,0,.14),0 12px 26px rgba(0,0,0,.16)}
+.sticky:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.sticky.dragging{cursor:grabbing;transform:rotate(2deg) scale(1.04);box-shadow:0 18px 40px rgba(0,0,0,.28)}
+.sticky-grip{height:6px;width:46px;margin:-2px auto 8px;border-radius:3px;background:rgba(0,0,0,.12)}
+.sticky b{display:block;font-size:15.5px;line-height:1.25;margin-bottom:4px;word-break:break-word}
+.sticky p{margin:0;font-size:13.5px;line-height:1.4;white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.sticky p.muted{color:rgba(0,0,0,.45)}
+.sticky ul{list-style:none;margin:6px 0 0;padding:0;font-size:13px;line-height:1.45}
+.sticky li.done{text-decoration:line-through;opacity:.6}.sticky li.more{opacity:.6}
+.sticky-prog{display:block;margin-top:6px;font-size:12px;opacity:.65}
+.sticky-modal{border-top:8px solid var(--sc)}
+.swatch-btn{width:32px;height:32px;border-radius:9px;border:2px solid rgba(0,0,0,.12);background:var(--c);cursor:pointer}
+.swatch-btn.on{outline:3px solid var(--ink);outline-offset:2px}
+@media (max-width:860px){.board-canvas{min-width:720px}}
+.pie-legend li.waiting{opacity:.55}
+.pie-legend li.waiting em{min-width:70px}
+.pie-empty{display:grid;place-items:center;border-radius:50%;border:30px solid var(--surface-2);color:var(--muted);font-size:13px;text-align:center;box-sizing:border-box}
+.pie-legend li{grid-template-columns:14px 1fr auto 70px}
 </style>
 </head>
 <body>
@@ -944,6 +988,22 @@ function migrate(s) {
   if (!s.calHistory || typeof s.calHistory !== 'object') s.calHistory = {};
   if (!Array.isArray(s.expenses)) s.expenses = [];
   if (!s.budget || typeof s.budget !== 'object') s.budget = { fns: [], activeId: null };
+  if (!s.boards || typeof s.boards !== 'object') s.boards = { folders: [], notes: [], active: null };
+  if (!s.boards.projectsMoved) {
+    const cols = ['#F3A712', '#E4572E', '#3A86FF', '#2EC4B6', '#8AC926', '#C77DFF', '#FF5D8F', '#6B7280'];
+    // the starter "Ideas" folder from the first version becomes a project called "General" if it has stickies
+    s.boards.folders = s.boards.folders.filter(f => !(f.id === 'bf_ideas' && !s.boards.notes.some(n => n.folderId === f.id)));
+    s.boards.folders.forEach(f => { if (f.id === 'bf_ideas') f.name = 'General'; });
+    (s.projects || []).forEach((pr, i) => {
+      const fid = 'bf_' + pr.id, done = (pr.steps || []).filter(x => x.done).length;
+      if (s.boards.folders.some(f => f.id === fid)) return;
+      s.boards.folders.push({ id: fid, name: pr.title, color: cols[(s.boards.folders.length + i) % cols.length], category: pr.category, createdAt: pr.createdAt });
+      s.boards.notes.push({ id: 'st_' + pr.id, folderId: fid, x: 16, y: 16, z: 1, color: '#FFE68A', title: 'Steps', text: '', checklist: (pr.steps || []).map(x => ({ text: x.text, done: !!x.done })), createdAt: pr.createdAt || new Date().toISOString().slice(0, 10), updatedAt: pr.lastActivity || pr.createdAt });
+    });
+    s.projects = [];
+    s.boards.projectsMoved = true;
+    if (!s.boards.folders.some(f => f.id === s.boards.active)) s.boards.active = s.boards.folders[0] ? s.boards.folders[0].id : null;
+  }
   (s.gigs || []).forEach(g => { if (!g.checklistInit && g.date >= new Date().toISOString().slice(0, 10)) { if (!g.checklist || !g.checklist.length) g.__needsList = true; } });
   if (!s.tax || typeof s.tax !== 'object') s.tax = { kmRate: 0.88 };
   if (!Array.isArray(s.hostTemplate)) s.hostTemplate = HOSTING_TEMPLATE.slice();
@@ -1158,9 +1218,13 @@ function destinationFor(p) {
   return TYPES[p.type] || 'Task';
 }
 
-function createProject(title, category, fromTaskId) {
-  const p = { id: uid('p'), title, category: category === 'someday' ? 'personal' : category, createdAt: D.today(), lastActivity: D.today(), steps: [], fromTaskId: fromTaskId || null };
-  S().projects.unshift(p); return p;
+/** A project is a folder on the Projects board. */
+function createProject(title, category, fromTask) {
+  const b = S().boards, cols = FOLDER_COLOURS;
+  const f = { id: uid('bf'), name: cap(title), color: cols[b.folders.length % cols.length], category: category === 'someday' ? 'personal' : category, createdAt: D.today() };
+  b.folders.push(f); b.active = f.id;
+  if (fromTask && ((fromTask.steps || []).length || fromTask.notes)) b.notes.push({ id: uid('st'), folderId: f.id, x: 16, y: 16, z: 1, color: STICKY_COLOURS[0][0], title: fromTask.title, text: fromTask.notes || '', checklist: (fromTask.steps || []).map(s => ({ text: s.text, done: !!s.done })), createdAt: D.today(), updatedAt: D.today() });
+  return f;
 }
 
 function fileItem(p) {
@@ -1309,11 +1373,16 @@ function lifeAudit() {
   open.filter(t => isActionable(t) && !t.due && D.diff(t.createdAt) <= -21).forEach(t => add('Forgotten items', 'med', `${t.title} has been sitting there for ${-D.diff(t.createdAt)} days.`, [{ label: 'Tomorrow', action: 'due-tomorrow', id: t.id }, { label: 'Done', action: 'toggle-task', id: t.id }]));
   if (st.inbox.length) add('Forgotten items', 'low', `${numWord(st.inbox.length)} unsorted ${st.inbox.length === 1 ? 'thought is' : 'thoughts are'} in your inbox.`, [{ label: 'Sort them', action: 'clean-inbox' }]);
   // Projects
-  st.projects.forEach(p => {
+  (st.boards.folders || []).forEach(fo => {
+    const notes = st.boards.notes.filter(n => n.folderId === fo.id), last = notes.map(n => n.updatedAt || n.createdAt).concat([fo.createdAt]).filter(Boolean).sort().pop();
+    const open = notes.flatMap(n => (n.checklist || []).filter(c => !c.done));
+    const idle = last ? -D.diff(last) : 0;
+    if (idle >= 21 && open.length) add('Projects with no progress', 'med', `${fo.name} hasn't moved in ${idle} days. Next up: ${open[0].text}.`, [{ label: 'Open Someday', action: 'nav', view: 'someday' }]);
+  });
+  [].forEach(p => {
     const idle = -D.diff(p.lastActivity || p.createdAt);
     if (idle >= 21) { const next = p.steps.find(s => !s.done); add('Projects with no progress', 'med', `${p.title} hasn't moved in ${idle} days.${next ? ` Next step: ${next.text}.` : ' It has no next step.'}`, [{ label: 'Open Someday', action: 'nav', view: 'someday' }]); }
   });
-  st.units.forEach(u => { const idle = -D.diff(u.lastActivity); if (idle >= 14 && u.planned < u.total) add('Projects with no progress', 'low', `The ${u.name} unit hasn't been touched in ${idle} days (${u.planned} of ${u.total} lessons planned).`, [{ label: 'Open Teaching', action: 'nav', view: 'teaching' }]); });
   // Health
   const f = st.fitness, ws = D.weekStart();
   const thisWeek = new Set(allWorkouts().filter(w => w.date >= ws && D.diff(w.date) <= 0).map(w => w.date + w.type)).size;
@@ -1494,7 +1563,7 @@ const AI = {
       gigs: st.gigs.map(g => { const r = gigReadiness(g); return { venue: g.venue, date: g.date, time: g.time, fee: g.fee, invoiced: g.invoiced, paid: g.paid, rehearsalsLogged: r.reh, readinessPct: r.pct, issues: r.issues }; }),
       songs: st.songs.map(s => ({ title: s.title, status: s.status })),
       teachingUnits: st.units.map(u => ({ name: u.name, lessonsPlanned: u.planned, of: u.total, lastTouched: u.lastActivity })),
-      projects: st.projects.map(p => ({ title: p.title, lastActivity: p.lastActivity, nextStep: p.steps.find(s => !s.done)?.text })),
+      projects: (st.boards.folders || []).map(f => ({ title: f.name, stickies: st.boards.notes.filter(n => n.folderId === f.id).map(n => n.title).filter(Boolean).slice(0, 8) })),
       fitness: { goalPerWeek: st.fitness.goalPerWeek, workoutsThisWeek: allWorkouts().filter(w => w.date >= ws).length, plannedWorkouts: plannedWorkouts().slice(0, 5).map(x => ({ title: x.title, date: x.date, time: x.time })), recentWeights: st.fitness.weights.slice(-5), goals: st.fitness.goals.filter(g => !g.done).map(g => g.text) },
       unsortedInbox: st.inbox.map(x => x.text),
       calendar: calEvents().filter(e => D.diff(e.endDate) >= 0 && D.diff(e.date) <= 14).map(e => ({ title: e.title, date: e.date, endDate: e.endDate !== e.date ? e.endDate : undefined, time: e.time, calendar: e.cal })),
@@ -2484,7 +2553,7 @@ function taskRow(t, o = {}) {
   return `<li class="row ${t.status === 'done' ? 'is-done' : ''}">
     <button class="check" data-action="toggle-task" data-id="${t.id}" aria-label="${t.status === 'done' ? 'Mark not done' : 'Mark done'}: ${esc(t.title)}"></button>
     <div class="row-main"><button class="row-title" data-action="open-task" data-id="${t.id}">${taskColor(t) ? `<i class="cdot" style="background:${taskColor(t)}"></i>` : ''}${esc(t.title)}</button>
-      <div class="row-meta">${o.noCat ? '' : catTag(t.category)}${o.showType ? `<span>${TYPES[t.type] || ''}</span>` : ''}${g && !o.noGig ? `<span>${esc(g.venue)} gig</span>` : ''}${t.remindAt && t.status === 'todo' && new Date(t.remindAt) > new Date() ? `<span class="remind-tag" title="Reminder on your phone">⏰ ${remindLabel(t.remindAt)}</span>` : ''}${t.source === 'calendar' ? '<span>From calendar</span>' : ''}${(t.steps || []).length ? `<span>${t.steps.filter(s => s.done).length} of ${t.steps.length} steps</span>` : ''}${(t.files || []).length ? `<span>${plural(t.files.length, 'file')}</span>` : ''}${t.priority === 1 && t.status !== 'done' ? '<span class="pri">High priority</span>' : ''}${t.estimate && o.est ? `<span>${t.estimate} min</span>` : ''}</div></div>
+      <div class="row-meta">${o.noCat ? '' : catTag(t.category)}${o.showType ? `<span>${TYPES[t.type] || ''}</span>` : ''}${g && !o.noGig ? `<span>${esc(g.venue)} gig</span>` : ''}${t.remindAt && t.status === 'todo' && new Date(t.remindAt) > new Date() ? `<span class="remind-tag" title="Reminder on your phone">⏰ ${remindLabel(t.remindAt)}</span>` : ''}${t.source === 'calendar' ? '<span>From calendar</span>' : ''}${(t.steps || []).length ? `<span>${t.steps.filter(s => s.done).length} of ${t.steps.length} steps</span>` : ''}${(() => { const ns = t.status === 'todo' && nextStepDue(t); return ns ? `<span class="${stepLate(ns) ? 'pri' : ''}">Next: ${esc(ns.text)}, ${stepDueLabel(ns)}</span>` : ''; })()}${(t.files || []).length ? `<span>${plural(t.files.length, 'file')}</span>` : ''}${t.priority === 1 && t.status !== 'done' ? '<span class="pri">High priority</span>' : ''}${t.estimate && o.est ? `<span>${t.estimate} min</span>` : ''}</div></div>
     ${o.noDue ? '' : dueChip(t)}<button class="row-del" data-action="del-task" data-id="${t.id}" aria-label="Delete ${esc(t.title)}" title="Delete">×</button></li>`;
 }
 const rows = (list, o, empty) => list.length ? `<ul class="rows">${list.map(t => taskRow(t, o)).join('')}</ul>` : `<p class="empty">${empty}</p>`;
@@ -2493,6 +2562,8 @@ function quickAdd(cat, placeholder) {
   return `<form class="quick" data-form="quick" data-cat="${cat || ''}"><label class="sr" for="q-${cat || 'any'}">Quick add</label><input class="input" id="q-${cat || 'any'}" name="q" placeholder="${esc(placeholder)}" autocomplete="off"><button class="btn" type="submit">Add</button></form>`;
 }
 
+/** Page names: yours if you've renamed a page, otherwise the standard ones. */
+const viewLabel = id => ((S().settings.viewNames || {})[id]) || (VIEWS.find(v => v[0] === id) || [id, id])[1];
 function renderNav() {
   const st = S(), open = openTasks();
   const overdueIn = c => open.filter(t => isActionable(t) && t.due && D.diff(t.due) < 0 && c(t)).length;
@@ -2503,10 +2574,10 @@ function renderNav() {
     music: { n: open.filter(t => t.category === 'music' && isActionable(t)).length },
     life: { n: open.filter(t => ['personal', 'finance', 'home'].includes(t.category) || (t.category === 'health' && t.type !== 'workout')).filter(isActionable).length },
     fitness: { n: 0 },
-    someday: { n: open.filter(t => t.category === 'someday').length + st.projects.length },
+    someday: { n: open.filter(t => t.category === 'someday').length + (st.boards.folders || []).length },
     budget: { n: 0 }
   };
-  $('#nav').innerHTML = VIEWS.map(([id, label]) => {
+  $('#nav').innerHTML = VIEWS.map(([id]) => { const label = esc(viewLabel(id));
     const c = counts[id];
     const txt = id === 'today' ? (c.n ? `${c.n} late` : '') : (c.n || '');
     return `<button data-action="nav" data-view="${id}" ${VIEW === id ? 'aria-current="page"' : ''}><span class="dot" style="background:${VIEW_DOT[id]}"></span>${label}<span class="count ${id === 'today' && c.n ? 'hot' : ''}">${txt}</span></button>`;
@@ -2595,7 +2666,7 @@ function arrangeTiles() {
   const vh = view.querySelector('.vhead');
   if (vh && !vh.querySelector('[data-action=tile-arrange]')) {
     const box = document.createElement('div'); box.className = 'inline-form arrange-box';
-    box.innerHTML = arranging ? `<button class="btn small primary" data-action="tile-arrange">Done arranging</button><button class="btn small ghost" data-action="tile-reset">Reset layout</button>` : `<button class="btn small ghost" data-action="tile-arrange">Arrange tiles</button>`;
+    box.innerHTML = arranging ? `<button class="btn small primary" data-action="tile-arrange">Done arranging</button><button class="btn small ghost" data-action="page-rename">Rename page</button><button class="btn small ghost" data-action="tile-reset">Reset layout</button>` : `<button class="btn small ghost" data-action="tile-arrange">Arrange tiles</button>`;
     vh.appendChild(box);
   }
 }
@@ -2612,6 +2683,8 @@ function render() {
   if (dumpVal && $('#dump')) $('#dump').value = dumpVal;
   makePanelsCollapsible();
   arrangeTiles();
+  { const h1 = $('#view .vhead h1'), own = (S().settings.viewNames || {})[VIEW]; if (h1 && own && VIEW !== 'today') h1.textContent = own; }
+  document.title = VIEW === 'today' ? "Mitch's Dashboard" : `${viewLabel(VIEW)} · Mitch's Dashboard`;
   if ($('#music-settings')) { const sc = $('#music-settings').scrollTop; openMusicSettings(); $('#music-settings').scrollTop = sc; }
   tickFocus();
 }
@@ -2681,6 +2754,7 @@ function viewToday() {
   { const ts = termStart(); if (inRange(ts)) events.push({ date: ts, title: 'First day of term', kind: 'teach', action: 'nav', data: 'data-view="teaching"', tip: 'First day of term' }); }
   st.tasks.filter(t => t.due && inRange(t.due) && t.category !== 'someday' && t.type !== 'shopping' && !(t.gigId && t.type !== 'invoice'))
     .forEach(t => events.push({ color: taskColor(t), date: t.due, time: isCommitment(t) ? t.time : null, title: t.title, kind: isCommitment(t) ? (t.category === 'teaching' ? 'teach' : 'event') : t.type === 'birthday' ? 'birthday' : 'task', done: t.status === 'done', action: 'open-task', data: `data-id="${t.id}"`, tip: `${t.title}${isCommitment(t) ? '' : t.status === 'done' ? ' (done)' : ' (due)'}` }));
+  st.tasks.filter(t => t.status === 'todo').forEach(t => (t.steps || []).filter(s => !s.done && s.due && inRange(s.due)).forEach(s => events.push({ color: taskColor(t), date: s.due, time: s.time || null, title: `${s.text} (${t.title})`, kind: 'task', action: 'open-task', data: `data-id="${t.id}"`, tip: `Step: ${s.text}\nFor: ${t.title}` })));
   events.sort((a, b) => (a.time || '00').localeCompare(b.time || '00'));
   const dayCells = [];
   for (let d = calStart; d <= calEnd; d = D.add(d, 1)) {
@@ -4069,6 +4143,65 @@ function viewLife() {
 }
 
 /* --- Fitness --- */
+/* ---------- Workout kinds, copying and progress charts ---------- */
+const WORKOUT_KINDS = ['Weights', 'Cardio', 'Walking', 'Hiking', 'Run', 'Swim', 'Bike', 'Yoga', 'Sport', 'Other', 'Rest day'];
+const DIST_KINDS = /^(cardio|walking|walk|hiking|hike|run|swim|bike|cycling)$/i;
+const LIFT_KINDS = /^(weights|gym|other)$/i;
+const kindOpts = sel => [...new Set(WORKOUT_KINDS.concat(sel && !WORKOUT_KINDS.includes(sel) ? [sel] : []))].map(k => `<option ${k === sel ? 'selected' : ''}>${esc(k)}</option>`).join('');
+const workoutText = w => w.rest ? '😴 Rest day' : `${esc(w.type === 'Gym' ? 'Weights' : w.type)}, ${w.minutes} min${w.km ? `, ${w.km} km` : ''}`;
+function copyWorkout(id) {
+  const w = S().fitness.workouts.find(x => x.id === id); if (!w) return;
+  closeOverlay(); if (VIEW !== 'fitness') go('fitness');
+  setTimeout(() => {
+    const f = $('form[data-form=workout]'); if (!f) return;
+    const kind = w.type === 'Gym' ? 'Weights' : w.type;
+    f.elements.type.value = [...f.elements.type.options].some(o => o.value === kind) ? kind : 'Other';
+    f.dataset.kind = f.elements.type.value;
+    f.elements.minutes.value = w.minutes || 30; f.elements.date.value = D.today(); f.elements.notes.value = w.notes || '';
+    if (f.elements.km) f.elements.km.value = w.km || '';
+    const box = f.querySelector('.ex-rows'); box.innerHTML = (w.exercises && w.exercises.length ? w.exercises : [{}]).map(x => exRowHtml(x)).join('');
+    f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast(`Copied your ${kind.toLowerCase()} session from ${D.label(w.date)}. Adjust anything, then press Log workout.`);
+  }, 50);
+}
+let fitMetric = null;
+function progressTile() {
+  const f = S().fitness, all = allWorkouts();
+  const lifts = [...new Set(f.workouts.flatMap(w => (w.exercises || []).filter(x => x.kg != null).map(x => x.name)))].sort();
+  const metric = fitMetric || S().settings.fitMetric || 'count';
+  const opts = [['count', 'Workouts per week'], ['minutes', 'Minutes per week'], ['km', 'Distance per week (km)']].concat(lifts.map(n => ['lift:' + n, `${n}: heaviest weight`]));
+  let pts = [], unit = '';
+  if (metric.startsWith('lift:')) {
+    const name = metric.slice(5).toLowerCase(); unit = 'kg';
+    pts = f.workouts.slice().sort(byDate).map(w => { const xs = (w.exercises || []).filter(x => x.name.toLowerCase() === name && x.kg != null); return xs.length ? { label: D.parse(w.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }), v: Math.max(...xs.map(x => x.kg)), tip: `${D.label(w.date)}: ${Math.max(...xs.map(x => x.kg))} kg${xs[0].sets ? `, ${xs[0].sets}×${xs[0].reps || '?'}` : ''}` } : null; }).filter(Boolean).slice(-16);
+  } else {
+    unit = metric === 'minutes' ? 'min' : metric === 'km' ? 'km' : '';
+    const ws0 = D.weekStart();
+    for (let k = 11; k >= 0; k--) {
+      const a = D.add(ws0, -7 * k), b = D.add(a, 6), list = all.filter(w => w.date >= a && w.date <= b);
+      const v = metric === 'minutes' ? list.reduce((s, w) => s + (+w.minutes || 0), 0) : metric === 'km' ? Math.round(list.reduce((s, w) => s + (+w.km || 0), 0) * 10) / 10 : list.length;
+      pts.push({ label: D.parse(a).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }), v, tip: `Week of ${D.parse(a).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}: ${v}${unit ? ' ' + unit : metric === 'count' ? ` workout${v === 1 ? '' : 's'}` : ''}`, cur: k === 0 });
+    }
+  }
+  return `<section class="panel section-gap"><h2>Progress</h2>
+    <select class="input" data-change="fit-metric" aria-label="What to chart" style="width:auto;margin-bottom:10px">${opts.map(([k, l]) => `<option value="${esc(k)}" ${k === metric ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+    ${pts.length > 1 && pts.some(p => p.v) ? lineChart(pts, unit, metric === 'count' && S().fitness.goalPerWeek) : `<p class="empty">${metric.startsWith('lift:') ? 'Log this lift a couple of times to see a trend.' : 'Log a few workouts to see a trend.'}</p>`}
+  </section>`;
+}
+function lineChart(pts, unit, goal) {
+  const W = 720, H = 220, L = 40, B = 30, T = 16, n = pts.length, max = Math.max(1, goal || 0, ...pts.map(p => p.v));
+  const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500].find(s => max / s <= 5) || 1000, top = Math.ceil(max / step) * step;
+  const x = i => L + (W - L - 12) * (n === 1 ? 0.5 : i / (n - 1)), y = v => T + (H - T - B) * (1 - v / top);
+  let grid = ''; for (let v = 0; v <= top; v += step) grid += `<line x1="${L}" x2="${W - 6}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 7}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`;
+  const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const area = `${path} L${x(n - 1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z`;
+  const every = Math.ceil(n / 8);
+  return `<svg class="line-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Progress chart">${grid}
+    ${goal ? `<line x1="${L}" x2="${W - 6}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--c-health)" stroke-dasharray="5 5"/><text x="${L + 6}" y="${y(goal) - 5}" text-anchor="start" font-size="11" fill="var(--c-health)">Goal ${goal}</text>` : ''}
+    <path d="${area}" fill="var(--c-health)" opacity=".12"/><path d="${path}" fill="none" stroke="var(--c-health)" stroke-width="2.6" stroke-linejoin="round"/>
+    ${pts.map((p, i) => `<g><title>${esc(p.tip)}</title><circle cx="${x(i)}" cy="${y(p.v)}" r="${p.cur ? 5 : 3.8}" fill="${p.cur ? 'var(--surface)' : 'var(--c-health)'}" stroke="var(--c-health)" stroke-width="2"/>${i % every === 0 || i === n - 1 ? `<text x="${x(i)}" y="${H - 9}" text-anchor="${i === n - 1 ? 'end' : i === 0 ? 'start' : 'middle'}" font-size="11" fill="var(--muted)">${esc(p.label)}</text>` : ''}</g>`).join('')}
+  </svg>${unit ? `<p class="muted" style="margin:4px 0 0;font-size:13px">In ${unit === 'min' ? 'minutes' : unit}. Point at a dot for details.</p>` : ''}`;
+}
 function viewFitness() {
   const f = S().fitness;
   const last30 = f.weights.filter(w => D.diff(w.date) >= -35);
@@ -4081,12 +4214,13 @@ function viewFitness() {
     ${fitnessCard().replace('<button class="btn small" data-action="nav" data-view="fitness">Log a workout</button>', '')}
     <section class="panel"><h2>Log a workout</h2>
       <div class="inline-form" style="margin-bottom:10px"><button class="btn small" data-action="rest-day">Log a rest day today</button></div>
-      <form class="form-grid" data-form="workout">
-        <label class="field">Type<select class="input" name="type">${['Run', 'Gym', 'Walk', 'Swim', 'Bike', 'Yoga', 'Sport', 'Other', 'Rest day'].map(x => `<option>${x}</option>`).join('')}</select></label>
+      <form class="form-grid wo-form" data-form="workout" data-kind="Weights">
+        <label class="field">Kind<select class="input" name="type" data-change="wo-kind">${kindOpts('Weights')}</select></label>
         <label class="field">Minutes<input class="input" name="minutes" type="number" min="5" max="400" value="30"></label>
         <label class="field">Date<input class="input" name="date" type="date" value="${D.today()}"></label>
+        <label class="field wo-dist">Distance (km)<input class="input" name="km" type="number" step="0.1" min="0" max="500" placeholder="e.g. 8.5"></label>
         <label class="field">Note<input class="input" name="notes" placeholder="Optional"></label>
-        <div class="full ex-wrap"><div class="extras-head"><b>What you did</b><span class="muted">Exercise, sets, reps and weight. Leave empty for a run or walk.</span></div>
+        <div class="full ex-wrap"><div class="extras-head"><b>What you did</b><span class="muted">Exercise, sets, reps and weight.</span></div>
           <datalist id="ex-names">${[...new Set(S().fitness.workouts.flatMap(w => (w.exercises || []).map(x => x.name)))].map(n => `<option value="${esc(n)}">`).join('')}</datalist>
           <div id="ex-rows" class="ex-rows">${exRowHtml()}</div>
           <button type="button" class="btn small ghost" data-action="ex-row">Add another exercise</button></div>
@@ -4094,7 +4228,7 @@ function viewFitness() {
       </form>
       <h3>Recent</h3>
       ${plannedWorkouts().length ? `<p class="muted" style="margin:0 0 6px;font-size:14px">Coming up from your calendar: ${esc(listJoin(plannedWorkouts().slice(0, 3).map(x => `${x.title} ${D.label(x.date)}${x.time ? ' ' + D.time(x.time) : ''}`)))}.</p>` : ''}
-      <ul class="rows">${allWorkouts().concat(restDays()).slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${w.fromCal ? `${esc(w.type)}, ${w.minutes} min` : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${w.rest ? '😴 Rest day' : `${esc(w.type)}, ${w.minutes} min`}</button>`}${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
+      <ul class="rows">${allWorkouts().concat(restDays()).slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${w.fromCal ? `${esc(w.type)}, ${w.minutes} min` : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${workoutText(w)}</button>${w.rest ? '' : `<button class="linkbtn wo-copy" data-action="wo-copy" data-id="${w.id}">Copy</button>`}`}${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
     </section>
   </div>
   <div class="grid g-3 section-gap">
@@ -4111,6 +4245,7 @@ function viewFitness() {
       <ul class="rows">${f.meals.slice().sort(byDate).reverse().slice(0, 6).map(m => `<li class="row"><div class="row-main">${esc(m.text)}</div><span class="chip">${D.label(m.date)}</span></li>`).join('')}</ul>
     </section>
   </div>
+  ${progressTile()}
   ${liftsPanel()}
   ${health.length ? `<section class="panel section-gap"><h2>Health tasks</h2>${rows(health, { noCat: true })}</section>` : ''}`;
 }
@@ -4119,20 +4254,32 @@ function viewFitness() {
 /* ---------- Budget: one fortnight at a time, laid out like Mitch's spreadsheet ----------
    Transferred = Budget − Current saved (unless typed); % of income = Actual used ÷ total income;
    Remaining = total income − everything transferred (aim for $0: every dollar has a job). */
-const BUD_TYPES = [
-  ['housing', 'Housing', '#4F68A6', /\b(rent|mortgage|rates|water|strata|body corp|electric|power|gas|home ?loan)\b/i],
-  ['groceries', 'Groceries', '#3A8660', /\b(groceries|grocery|food|supermarket|woolies|coles|aldi)\b/i],
-  ['leisure', 'Leisure', '#C77DFF', /\b(leisure|fun|entertainment|dining|takeaway|gig ticket|movies|birthday present to myself)\b/i],
-  ['bills', 'Bills and subscriptions', '#E4572E', /\b(spotify|netflix|disney|internet|phone|insurance|rego|registration|subscription|app|bill)\b/i],
-  ['transport', 'Transport', '#F3A712', /\b(fuel|petrol|car|toll|parking|uber|train|bus|maintenance|tyres?)\b/i],
-  ['family', 'Family and kids', '#FF5D8F', /\b(child support|kids?|swimming|parenting|school|evie|harry|birthday gift|present)\b/i],
-  ['music', 'Music and gear', '#00A5CF', /\b(strings|pedal|pedalboard|speaker|pa\b|guitar|amp|mic|cable|plugs?)\b/i],
+/* Spending types for the chart. Order matters: the first match wins. */
+const BUD_TYPES_BASE = [
+  ['housing', 'Housing', '#4F68A6', /\b(rent|mortgage|rates|water|strata|body corp|electric|electricity|power|gas|home ?loan)\b/i],
+  ['teaching', 'Teaching', '#7B61FF', /\b(teacher|teaching|classroom|school supplies|work supplies|registration|qct|pd|professional development|resources for (school|class))\b/i],
+  ['gifts', 'Gifts', '#FF5D8F', /\b(gifts?|presents?|birthday|christmas|xmas|wedding|anniversary|mother'?s day|father'?s day)\b/i],
   ['savings', 'Savings and goals', '#2EC4B6', /\b(saving|savings|sg\d|goal|rainy day|backpay|buffer|emergency)\b/i],
-  ['debt', 'Debt and credit', '#8D6E63', /\b(credit|loan|lawyer|repayment|afterpay|zip|pay .* back|mediation)\b/i],
-  ['health', 'Health and fitness', '#8AC926', /\b(gym|doctor|dentist|physio|health|pharmacy|haircut)\b/i],
+  ['groceries', 'Groceries', '#3A8660', /\b(groceries|grocery|food|supermarket|woolies|woolworths|coles|aldi|meal prep)\b/i],
+  ['leisure', 'Leisure', '#C77DFF', /\b(leisure|fun|entertainment|dining|takeaway|restaurant|tickets?|movies|games?|concert|musical)\b/i],
+  ['clothing', 'Clothing', '#D97706', /\b(clothes|clothing|shoes|boots|jeans|shirts?|jacket|uniform|socks)\b/i],
+  ['holidays', 'Holidays and travel', '#0EA5E9', /\b(holiday|travel|trip|flights?|accommodation|hotel|airbnb|cairns)\b/i],
+  ['bills', 'Bills and subscriptions', '#E4572E', /\b(spotify|netflix|disney|stan|youtube|internet|nbn|phone|mobile|insurance|rego|subscription|apple|icloud|bill)\b/i],
+  ['transport', 'Transport', '#F3A712', /\b(fuel|petrol|diesel|car|toll|parking|uber|train|bus|service|tyres?)\b/i],
+  ['family', 'Family and kids', '#E879F9', /\b(child support|kids?|swimming|parenting|school fees|evie|harry|childcare)\b/i],
+  ['music', 'Music and gear', '#00A5CF', /\b(strings|pedal|pedalboard|speaker|pa\b|guitar|amp|mic|cable|plugs?|picks)\b/i],
+  ['debt', 'Debt and credit', '#8D6E63', /\b(credit|loan|lawyer|legal|repayment|afterpay|zip|mediation)\b|\bpay\s+\w+\s+back\b/i],
+  ['church', 'Church and giving', '#A3A635', /\b(church|tithe|offering|donation|charity|sponsor)\b/i],
+  ['personal', 'Personal care', '#F472B6', /\b(haircut|barber|toiletries|skincare|deodorant|shampoo|razor|heat ?pack)\b/i],
+  ['health', 'Health and fitness', '#8AC926', /\b(gym|doctor|dentist|physio|health|pharmacy|chemist|medicare|psych)\b/i],
+  ['pets', 'Pets', '#9C6644', /\b(pet|dog|cat|vet|kibble)\b/i],
+  ['home', 'Home and household', '#64748B', /\b(homewares|homewears|household|furniture|cleaning|kitchen|garden|hardware|bunnings)\b/i],
   ['other', 'Other', '#9CA3AF', null]
 ];
-const budTypeOf = i => i.type || (BUD_TYPES.find(t => t[3] && t[3].test(i.name)) || BUD_TYPES[BUD_TYPES.length - 1])[0];
+/** Built-in types plus any you've added yourself. */
+const budTypes = () => { const own = (S().budget.customTypes || []).map(t => [t.k, t.label, t.color, null]); return BUD_TYPES_BASE.slice(0, -1).concat(own, [BUD_TYPES_BASE[BUD_TYPES_BASE.length - 1]]); };
+const BUD_TYPES = BUD_TYPES_BASE;
+const budTypeOf = i => { if (i.type && budTypes().some(t => t[0] === i.type)) return i.type; return (BUD_TYPES_BASE.find(t => t[3] && t[3].test(i.name)) || BUD_TYPES_BASE[BUD_TYPES_BASE.length - 1])[0]; };
 const BUD_SECS = [['fixed', 'Core expenses (Fixed)'], ['variable', 'Core expenses (Variable)'], ['seasonal', 'Seasonal and upcoming']];
 const r2 = n => Math.round((+n || 0) * 100) / 100;
 const money2 = n => (n < 0 ? '−' : '') + '$' + Math.abs(r2(n)).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -4199,23 +4346,33 @@ function openBudNote(id) {
     <div class="modal-head"><h2 id="bn-title">${esc(i.name)}</h2><button class="btn small ghost" data-action="close">Close</button></div>
     <form class="form-grid" data-form="bud-note" data-id="${i.id}">
       <label class="field full">Note<textarea class="input" name="note" rows="3" placeholder="e.g. Due 10 August, or what this was for">${esc(i.note || '')}</textarea></label>
-      <label class="field full">Type (for the spending chart)<select class="input" name="type">${BUD_TYPES.map(([k, l]) => `<option value="${k}" ${budTypeOf(i) === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label class="field full">Category (for the spending chart)<select class="input" name="type" data-change="bud-type-pick">${budTypes().map(([k, l]) => `<option value="${k}" ${budTypeOf(i) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}<option value="__new">Add a new category…</option></select></label>
       <div class="modal-foot full"><button class="btn primary" type="submit">Save</button></div>
     </form></div></div>`;
 }
 /* Spending by type: a donut chart of Actual used */
-let budChartPeriod = 'fn';
+let budChartPeriod = 'fn', budChartWhat = 'spent';
 function budSpendTile(fn) {
   const list = budChartPeriod === 'fy' ? budFns().filter(f => fyOfDate(f.start) === fyOfDate(fn.start)) : [fn];
-  const sums = {}; list.forEach(f => f.items.forEach(i => { const a = +i.actual || 0; if (a > 0) { const k = budTypeOf(i); sums[k] = (sums[k] || 0) + a; } }));
-  const rows = BUD_TYPES.map(([k, l, c]) => ({ k, l, c, v: r2(sums[k] || 0) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
+  const spent = {}, planned = {};
+  list.forEach(f => f.items.forEach(i => { const k = budTypeOf(i); spent[k] = (spent[k] || 0) + (+i.actual || 0); planned[k] = (planned[k] || 0) + budTr(i); }));
+  const val = budChartWhat === 'planned' ? planned : spent;
+  const all = budTypes().map(([k, l, c]) => ({ k, l, c, v: r2(val[k] || 0), p: r2(planned[k] || 0), s: r2(spent[k] || 0) }));
+  const rows = all.filter(x => x.v > 0).sort((a, b) => b.v - a.v);
+  const waiting = budChartWhat === 'spent' ? all.filter(x => x.v <= 0 && x.p > 0).sort((a, b) => b.p - a.p) : [];
   const total = rows.reduce((a, x) => a + x.v, 0);
   const R_ = 70, C = 2 * Math.PI * R_; let off = 0;
   const arcs = rows.map(x => { const len = x.v / total * C, s = `<circle r="${R_}" cx="90" cy="90" fill="none" stroke="${x.c}" stroke-width="30" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}" transform="rotate(-90 90 90)"><title>${esc(x.l)}: ${money2(x.v)} (${Math.round(x.v / total * 100)}%)</title></circle>`; off += len; return s; }).join('');
-  return `<section class="panel"><h2>Spending by type</h2>
-    <div class="seg" role="group" aria-label="Period" style="margin-bottom:12px"><button class="${budChartPeriod === 'fn' ? 'on' : ''}" data-action="bud-chart" data-p="fn">This fortnight</button><button class="${budChartPeriod === 'fy' ? 'on' : ''}" data-action="bud-chart" data-p="fy">${fyRange(fyOfDate(fn.start)).label} financial year</button></div>
-    ${total ? `<div class="pie-wrap"><svg viewBox="0 0 180 180" class="pie" role="img" aria-label="Spending by type">${arcs}<text x="90" y="86" text-anchor="middle" font-size="12" fill="var(--muted)">Actual used</text><text x="90" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">${money2(total).replace('.00', '')}</text></svg>
-      <ul class="pie-legend">${rows.map(x => `<li><i style="background:${x.c}"></i><span>${esc(x.l)}</span><b>${money2(x.v)}</b><em>${Math.round(x.v / total * 100)}%</em></li>`).join('')}</ul></div>` : '<p class="empty">Fill in Actual used and your spending shows here.</p>'}
+  const word = budChartWhat === 'planned' ? 'Planned' : 'Spent';
+  return `<section class="panel"><h2>Spending by category</h2>
+    <div class="inline-form" style="margin-bottom:12px">
+      <div class="seg" role="group" aria-label="What to chart"><button class="${budChartWhat === 'spent' ? 'on' : ''}" data-action="bud-chart-what" data-w="spent">Spent</button><button class="${budChartWhat === 'planned' ? 'on' : ''}" data-action="bud-chart-what" data-w="planned">Planned</button></div>
+      <div class="seg" role="group" aria-label="Period"><button class="${budChartPeriod === 'fn' ? 'on' : ''}" data-action="bud-chart" data-p="fn">This fortnight</button><button class="${budChartPeriod === 'fy' ? 'on' : ''}" data-action="bud-chart" data-p="fy">${fyRange(fyOfDate(fn.start)).label} financial year</button></div>
+    </div>
+    ${total || waiting.length ? `<div class="pie-wrap">${total ? `<svg viewBox="0 0 180 180" class="pie" role="img" aria-label="${word} by category">${arcs}<text x="90" y="86" text-anchor="middle" font-size="12" fill="var(--muted)">${word}</text><text x="90" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">${money2(total).replace('.00', '')}</text></svg>` : `<div class="pie pie-empty">Nothing spent yet</div>`}
+      <ul class="pie-legend">${rows.map(x => `<li><i style="background:${x.c}"></i><span>${esc(x.l)}</span><b>${money2(x.v)}</b><em>${Math.round(x.v / total * 100)}%</em></li>`).join('')}
+        ${waiting.map(x => `<li class="waiting"><i style="background:${x.c}"></i><span>${esc(x.l)}</span><b>$0.00</b><em title="Planned">of ${money2(x.p).replace('.00', '')}</em></li>`).join('')}</ul></div>`
+      : `<p class="empty">${budChartWhat === 'spent' ? 'Fill in Actual used and your spending shows here.' : 'Add items with a budget and they show here.'}</p>`}
   </section>`;
 }
 /* Export to Excel, laid out like the original spreadsheet (with working formulas) */
@@ -4400,6 +4557,103 @@ function rerenderKeepFocus() {
     if (fid) { const n = document.querySelector(`[data-fid="${CSS.escape(fid)}"]`); if (n) { n.focus(); if (sel) try { n.setSelectionRange(0, n.value.length); } catch (e) {} } }
   }, 0);
 }
+/* ---------- Idea boards: folders of stickies you can drag around ---------- */
+const STICKY_COLOURS = [['#FFE68A', 'Yellow'], ['#FFC4D6', 'Pink'], ['#B9E3FF', 'Blue'], ['#C8F0C0', 'Green'], ['#FFD2A8', 'Orange'], ['#DCCBFF', 'Purple']];
+const FOLDER_COLOURS = ['#F3A712', '#E4572E', '#3A86FF', '#2EC4B6', '#8AC926', '#C77DFF', '#FF5D8F', '#6B7280'];
+const boards = () => S().boards;
+const activeFolder = () => { const b = boards(); return b.folders.find(f => f.id === b.active) || b.folders[0]; };
+const STICKY_W = 210;
+function boardTile() {
+  const b = boards(), fo = activeFolder(), notes = fo ? b.notes.filter(n => n.folderId === fo.id).sort((a, c) => (a.z || 0) - (c.z || 0)) : [];
+  const height = Math.max(460, ...notes.map(n => (n.y || 0) + 240));
+  if (!b.folders.length) return `<section class="panel section-gap"><h2>Projects</h2><p class="empty">No projects yet. Start one here, or press <b>Make it a project</b> on an idea.</p><div class="inline-form"><button class="btn small primary" data-action="bf-new">+ New project</button></div></section>`;
+  return `<section class="panel section-gap"><h2>Projects</h2>
+    <div class="folder-tabs" role="tablist" aria-label="Projects">
+      ${b.folders.map(f => `<button class="folder-tab ${fo && f.id === fo.id ? 'on' : ''}" role="tab" aria-selected="${fo && f.id === fo.id}" data-action="bf-open" data-id="${f.id}" data-folder="${f.id}" style="--fc:${f.color}"><i></i>${esc(f.name)}<em>${b.notes.filter(n => n.folderId === f.id).length}</em></button>`).join('')}
+      <button class="folder-tab add" data-action="bf-new">+ Project</button>
+    </div>
+    <div class="board-bar"><button class="btn small primary" data-action="st-new">+ Sticky</button>${fo ? `<button class="btn small ghost" data-action="bf-edit" data-id="${fo.id}">Project settings</button><button class="btn small ghost" data-action="st-tidy">Tidy up</button>` : ''}</div>
+    <div class="board-scroll"><div class="board-canvas" id="board-canvas" style="height:${height}px" data-folder="${fo ? fo.id : ''}">
+      ${notes.map(stickyHtml).join('')}
+      ${notes.length ? '' : '<p class="board-empty">Double-click anywhere (or press + Sticky) to add a sticky.</p>'}
+    </div></div>
+  </section>`;
+}
+function stickyHtml(n) {
+  const cl = n.checklist || [], done = cl.filter(c => c.done).length;
+  return `<div class="sticky" data-sticky="${n.id}" style="left:${n.x || 0}px;top:${n.y || 0}px;--sc:${n.color || STICKY_COLOURS[0][0]};z-index:${n.z || 1}" tabindex="0" role="button" aria-label="Sticky: ${esc(n.title || 'Untitled')}. Press Enter to open.">
+    <div class="sticky-grip" aria-hidden="true"></div>
+    ${n.title ? `<b>${esc(n.title)}</b>` : ''}
+    ${n.text ? `<p>${esc(n.text)}</p>` : ''}
+    ${cl.length ? `<ul>${cl.slice(0, 5).map(c => `<li class="${c.done ? 'done' : ''}">${c.done ? '☑' : '☐'} ${esc(c.text)}</li>`).join('')}${cl.length > 5 ? `<li class="more">+${cl.length - 5} more</li>` : ''}</ul><span class="sticky-prog">${done} of ${cl.length} done</span>` : ''}
+    ${!n.title && !n.text && !cl.length ? '<p class="muted">Empty sticky</p>' : ''}
+  </div>`;
+}
+function newSticky(at) {
+  const b = boards(), fo = activeFolder(); if (!fo) return null;
+  const mine = b.notes.filter(n => n.folderId === fo.id), z = Math.max(0, ...b.notes.map(n => n.z || 0)) + 1;
+  let x = at ? at.x : 16 + (mine.length % 4) * (STICKY_W + 16), y = at ? at.y : 16 + Math.floor(mine.length / 4) * 200;
+  const n = { id: uid('st'), folderId: fo.id, x: Math.max(0, Math.round(x)), y: Math.max(0, Math.round(y)), z, color: STICKY_COLOURS[mine.length % STICKY_COLOURS.length][0], title: '', text: '', checklist: [], createdAt: D.today() };
+  b.notes.push(n); return n;
+}
+function openSticky(id) {
+  const b = boards(), n = b.notes.find(x => x.id === id); if (!n) return;
+  const cl = n.checklist || [];
+  $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal sticky-modal" role="dialog" aria-modal="true" aria-labelledby="stk-title" style="--sc:${n.color}">
+    <div class="modal-head"><h2 id="stk-title">Sticky</h2><button class="btn small ghost" data-action="st-close">Close</button></div>
+    <div class="form-grid">
+      <label class="field full">Title<input class="input" data-change="st-field" data-id="${n.id}" data-f="title" value="${esc(n.title)}" placeholder="e.g. Loop pedal covers set"></label>
+      <label class="field full">Details<textarea class="input" rows="5" data-change="st-field" data-id="${n.id}" data-f="text" placeholder="Anything worth remembering: links, who to ask, rough costs…">${esc(n.text)}</textarea></label>
+      <div class="field full"><span>Checklist</span>
+        ${cl.length ? `<ul class="rows">${cl.map((c, i) => `<li class="row ${c.done ? 'is-done' : ''}"><button type="button" class="check" data-action="st-check" data-id="${n.id}" data-i="${i}" aria-label="Toggle ${esc(c.text)}"></button><div class="row-main"><span class="row-title" style="cursor:default">${esc(c.text)}</span></div><button type="button" class="row-del" data-action="st-check-del" data-id="${n.id}" data-i="${i}" aria-label="Delete ${esc(c.text)}">×</button></li>`).join('')}</ul>` : ''}
+        <div class="inline-form" style="margin-top:6px"><input class="input" id="st-new-item" placeholder="Add an item, then press Enter" data-enter="st-check-add" data-id="${n.id}" aria-label="Add a checklist item"><button type="button" class="btn small" data-action="st-check-add" data-id="${n.id}">Add</button></div></div>
+      <div class="field"><span>Colour</span><div class="swatches">${STICKY_COLOURS.map(([c, l]) => `<button type="button" class="swatch-btn ${n.color === c ? 'on' : ''}" style="--c:${c}" data-action="st-colour" data-id="${n.id}" data-c="${c}" aria-label="${l}" aria-pressed="${n.color === c}"></button>`).join('')}</div></div>
+      <label class="field">Project<select class="input" data-change="st-field" data-id="${n.id}" data-f="folderId">${b.folders.map(f => `<option value="${f.id}" ${f.id === n.folderId ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>
+      <div class="modal-foot full"><div class="inline-form"><button type="button" class="btn primary" data-action="st-close">Done</button><button type="button" class="btn" data-action="st-task" data-id="${n.id}">Make it a to-do</button></div><button type="button" class="btn ghost danger-link" data-action="st-del" data-id="${n.id}">Delete sticky</button></div>
+    </div></div></div>`;
+}
+function openFolderEditor(id) {
+  const f = id ? boards().folders.find(x => x.id === id) : null;
+  $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="fo-title">
+    <div class="modal-head"><h2 id="fo-title">${f ? 'Project settings' : 'New project'}</h2><button class="btn small ghost" data-action="close">Close</button></div>
+    <form class="form-grid" data-form="folder" data-id="${f ? f.id : ''}">
+      <label class="field full">Name<input class="input" name="name" value="${f ? esc(f.name) : ''}" placeholder="e.g. Record EP, Renovate the deck, Year 9 musical" required></label>
+      <div class="field full"><span>Colour</span><div class="swatches">${FOLDER_COLOURS.map((c, i) => `<label class="swatch" style="--c:${c}"><input type="radio" name="color" value="${c}" ${(f ? f.color === c : i === 0) ? 'checked' : ''}><i></i></label>`).join('')}</div></div>
+      <div class="modal-foot full"><button class="btn primary" type="submit">${f ? 'Save' : 'Create project'}</button>${f ? `<button class="btn ghost danger-link" type="button" data-action="bf-del" data-id="${f.id}">Delete project</button>` : ''}</div>
+    </form></div></div>`;
+  setTimeout(() => $('#overlay input[name=name]')?.focus(), 0);
+}
+/* dragging stickies: pointer events work for mouse, pen and finger */
+let stDrag = null;
+function stPointerDown(ev) {
+  const el = ev.target.closest && ev.target.closest('.sticky'); if (!el || ev.button > 0) return;
+  const n = boards().notes.find(x => x.id === el.dataset.sticky); if (!n) return;
+  stDrag = { id: n.id, el, x0: ev.clientX, y0: ev.clientY, nx: n.x || 0, ny: n.y || 0, moved: false, pid: ev.pointerId };
+  const z = Math.max(0, ...boards().notes.map(x => x.z || 0)) + 1; el.style.zIndex = z; n.z = z;
+}
+function stPointerMove(ev) {
+  if (!stDrag) return;
+  const dx = ev.clientX - stDrag.x0, dy = ev.clientY - stDrag.y0;
+  if (!stDrag.moved && Math.hypot(dx, dy) < 6) return;
+  if (!stDrag.moved) { stDrag.moved = true; stDrag.el.classList.add('dragging'); try { stDrag.el.setPointerCapture(stDrag.pid); } catch (e) {} }
+  ev.preventDefault();
+  const canvas = $('#board-canvas'), maxX = canvas ? canvas.scrollWidth - STICKY_W : 2000;
+  const nx = Math.max(0, Math.min(maxX, stDrag.nx + dx)), ny = Math.max(0, stDrag.ny + dy);
+  stDrag.el.style.left = nx + 'px'; stDrag.el.style.top = ny + 'px'; stDrag.px = nx; stDrag.py = ny;
+  if (canvas && ny + 240 > canvas.offsetHeight) canvas.style.height = (ny + 260) + 'px';
+  document.querySelectorAll('.folder-tab.drop').forEach(t => t.classList.remove('drop'));
+  const tab = document.elementsFromPoint(ev.clientX, ev.clientY).find(e => e.classList && e.classList.contains('folder-tab') && e.dataset.folder);
+  if (tab && tab.dataset.folder !== canvas?.dataset.folder) { tab.classList.add('drop'); stDrag.dropFolder = tab.dataset.folder; } else stDrag.dropFolder = null;
+}
+function stPointerUp() {
+  if (!stDrag) return;
+  const d = stDrag; stDrag = null;
+  const n = boards().notes.find(x => x.id === d.id); if (!n) return;
+  document.querySelectorAll('.folder-tab.drop').forEach(t => t.classList.remove('drop'));
+  if (!d.moved) { Store.save(); openSticky(n.id); return; }
+  if (d.dropFolder) { const f = boards().folders.find(x => x.id === d.dropFolder); n.folderId = d.dropFolder; n.x = 16; n.y = 16; commit(); toast(`Moved to ${f ? f.name : 'project'}`); return; }
+  n.x = Math.round(d.px ?? n.x); n.y = Math.round(d.py ?? n.y); Store.save(); d.el.classList.remove('dragging');
+}
 function viewSomeday() {
   const st = S();
   const ideas = st.tasks.filter(t => t.category === 'someday' && t.status === 'todo');
@@ -4408,17 +4662,9 @@ function viewSomeday() {
   ${quickAdd('someday', 'e.g. Write a musical for the Year 9s')}
   <section class="panel"><h2>Ideas <span class="sub">${ideas.length}</span></h2>
     ${ideas.length ? `<div class="ideas">${ideas.map(t => `<div class="idea"><p>${esc(t.title)}</p><span class="muted" style="font-size:13.5px">Added ${D.rel(t.createdAt)}${(t.steps || []).length ? `, ${t.steps.filter(s => s.done).length} of ${t.steps.length} steps` : ''}${(t.files || []).length ? `, ${plural(t.files.length, 'file')}` : ''}</span>
-      <div class="inline-form"><button class="btn small primary" data-action="idea-project" data-id="${t.id}">Make it a project</button><button class="btn small ghost" data-action="open-task" data-id="${t.id}">Steps and files</button></div></div>`).join('')}</div>` : '<p class="empty">No ideas parked. Add anything you might want to do one day.</p>'}
+      <div class="inline-form"><button class="btn small primary" data-action="idea-project" data-id="${t.id}">Make it a project</button><button class="btn small ghost" data-action="open-task" data-id="${t.id}">Steps and files</button><button class="btn small ghost danger-link" data-action="del-task" data-id="${t.id}" aria-label="Delete idea: ${esc(t.title)}">Delete</button></div></div>`).join('')}</div>` : '<p class="empty">No ideas parked. Add anything you might want to do one day.</p>'}
   </section>
-  <section class="panel section-gap"><h2>Projects <span class="sub">${st.projects.length}</span></h2>
-    ${st.projects.length ? st.projects.map(p => {
-      const idle = -D.diff(p.lastActivity || p.createdAt), done = p.steps.filter(s => s.done).length;
-      return `<div class="project"><div class="unit-top"><h3 style="margin:0;font-size:19px">${esc(p.title)}</h3><span class="muted" style="font-size:14px">${idle >= 21 ? `<span class="pri">No progress for ${idle} days</span>` : `Last moved ${D.rel(p.lastActivity || p.createdAt)}`}</span></div>
-        ${p.steps.length ? `<div class="bar" style="margin:4px 0 10px"><span style="width:${Math.round(done / p.steps.length * 100)}%"></span></div>` : '<p class="muted" style="margin:4px 0 8px">Add the very first step. Keep it small enough to do in 20 minutes.</p>'}
-        <ul class="rows">${p.steps.map((s, i) => `<li class="row ${s.done ? 'is-done' : ''}"><button class="check" data-action="step-toggle" data-id="${p.id}" data-i="${i}" aria-label="Toggle ${esc(s.text)}"></button><div class="row-main"><span class="row-title" style="cursor:default">${esc(s.text)}</span></div>${!s.done && p.steps.findIndex(x => !x.done) === i ? `<button class="btn small ghost" data-action="step-to-task" data-id="${p.id}" data-i="${i}">Schedule it</button>` : ''}</li>`).join('')}</ul>
-        <div class="inline-form" style="margin-top:8px"><form class="inline-form" data-form="step" data-id="${p.id}" style="flex:1"><input class="input" name="t" placeholder="Add a step" aria-label="Add a step to ${esc(p.title)}"><button class="btn small" type="submit">Add step</button></form><button class="btn small ghost" data-action="project-delete" data-id="${p.id}">Delete project</button></div></div>`;
-    }).join('') : '<p class="empty">No active projects. Convert an idea above when you’re ready.</p>'}
-  </section>`;
+  ${boardTile()}`;
 }
 
 /* --- Overlays --- */
@@ -4458,14 +4704,21 @@ function taskExtrasHtml(t) {
   return `<div class="extras">
     ${t.type === 'assessment' ? `<div class="extras-head"><b>Marking</b></div>${markingBoxes(t, false)}<div style="height:14px"></div>` : ''}
     <div class="extras-head"><b>Steps</b><span class="muted">${steps.length ? `${done} of ${steps.length} done` : 'Break it into smaller pieces to tick off'}</span></div>
-    ${steps.length ? `<ul class="rows">${steps.map((s, i) => `<li class="row ${s.done ? 'is-done' : ''}"><button type="button" class="check" data-action="step-t" data-id="${t.id}" data-i="${i}" aria-label="Toggle ${esc(s.text)}"></button><div class="row-main"><span class="row-title" style="cursor:default">${esc(s.text)}</span></div><span class="mini"><button type="button" data-action="step-mv" data-id="${t.id}" data-i="${i}" data-d="-1" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button><button type="button" data-action="step-mv" data-id="${t.id}" data-i="${i}" data-d="1" aria-label="Move down" ${i < steps.length - 1 ? '' : 'disabled'}>↓</button><button type="button" data-action="step-del" data-id="${t.id}" data-i="${i}" aria-label="Delete step">×</button></span></li>`).join('')}</ul>` : ''}
-    <div class="inline-form" style="margin-top:8px"><input class="input" id="step-new" placeholder="Add a step, then press Enter" aria-label="Add a step" data-enter="step-add" data-id="${t.id}"><button type="button" class="btn small" data-action="step-add" data-id="${t.id}">Add step</button></div>
+    ${steps.length ? `<ul class="rows">${steps.map((s, i) => `<li class="row ${s.done ? 'is-done' : ''}"><button type="button" class="check" data-action="step-t" data-id="${t.id}" data-i="${i}" aria-label="Toggle ${esc(s.text)}"></button><div class="row-main"><span class="row-title" style="cursor:default">${esc(s.text)}</span>
+      ${stepDueOpen === `${t.id}:${i}` ? `<div class="step-due-edit"><input class="input" type="date" data-change="step-due" data-id="${t.id}" data-i="${i}" data-f="due" value="${s.due || ''}" aria-label="Step due date"><input class="input" type="time" data-change="step-due" data-id="${t.id}" data-i="${i}" data-f="time" value="${s.time || ''}" aria-label="Step due time"><button type="button" class="btn small ghost" data-action="step-due-edit" data-id="${t.id}" data-i="${i}">Done</button>${s.due ? `<button type="button" class="linkbtn danger-link" data-action="step-due-clear" data-id="${t.id}" data-i="${i}">Clear</button>` : ''}</div>` : ''}</div>
+      ${s.due ? `<span class="chip ${!s.done && stepLate(s) ? 'late' : ''}">${stepDueLabel(s)}</span>` : ''}<button type="button" class="step-due-btn" data-action="step-due-edit" data-id="${t.id}" data-i="${i}" aria-label="Set a due time for ${esc(s.text)}" title="Due date and time">⏲</button><span class="mini"><button type="button" data-action="step-mv" data-id="${t.id}" data-i="${i}" data-d="-1" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button><button type="button" data-action="step-mv" data-id="${t.id}" data-i="${i}" data-d="1" aria-label="Move down" ${i < steps.length - 1 ? '' : 'disabled'}>↓</button><button type="button" data-action="step-del" data-id="${t.id}" data-i="${i}" aria-label="Delete step">×</button></span></li>`).join('')}</ul>` : ''}
+    <div class="inline-form step-add" style="margin-top:8px"><input class="input" id="step-new" placeholder="Add a step, then press Enter" aria-label="Add a step" data-enter="step-add" data-id="${t.id}"><input class="input" type="date" id="step-new-due" aria-label="Step due date (optional)"><input class="input" type="time" id="step-new-time" aria-label="Step due time (optional)"><button type="button" class="btn small" data-action="step-add" data-id="${t.id}">Add step</button></div>
     <div class="extras-head" style="margin-top:16px"><b>Attachments</b><span class="muted">${files.length ? plural(files.length, 'file') : 'Documents, photos, PDFs'}</span></div>
     ${files.length ? `<ul class="rows">${files.map(f => `<li class="row"><div class="row-main"><button type="button" class="row-title" data-action="att-view" data-id="${t.id}" data-f="${f.id}">${esc(f.name)}</button><div class="row-meta"><span>${fmtSize(f.size || 0)}</span><span>Added ${D.rel(f.added)}</span></div></div><span class="mini"><button type="button" data-action="att-dl" data-id="${t.id}" data-f="${f.id}" aria-label="Download ${esc(f.name)}">↓</button><button type="button" data-action="att-del" data-id="${t.id}" data-f="${f.id}" aria-label="Remove ${esc(f.name)}">×</button></span></li>`).join('')}</ul>` : ''}
     <div class="receipt-drop" style="margin:8px 0 0" id="att-drop" data-id="${t.id}"><span>Drop files here, or</span><button type="button" class="btn small" data-action="att-add" data-id="${t.id}">Choose files</button></div>
     <div id="att-preview"></div>
   </div>`;
 }
+let stepDueOpen = null;
+const stepLate = s => s.due && (D.diff(s.due) < 0 || (D.diff(s.due) === 0 && s.time && s.time < D.nowHM()));
+const stepDueLabel = s => `${D.label(s.due)}${s.time ? ' ' + D.time(s.time) : ''}`;
+/** The next unfinished step that has a due date, for list rows and the calendar. */
+const nextStepDue = t => (t.steps || []).filter(s => !s.done && s.due).sort((a, b) => (a.due + (a.time || '')).localeCompare(b.due + (b.time || '')))[0] || null;
 function refreshTaskExtras(id) { const box = $('#task-extras'), t = taskById(id); if (box && t) box.innerHTML = taskExtrasHtml(t); }
 let attTarget = null;
 async function addAttachments(id, fileList) {
@@ -4517,15 +4770,16 @@ function openWorkoutModal(id) {
   const types = ['Gym', 'Run', 'Walk', 'Swim', 'Bike', 'Yoga', 'Other', 'Rest day'];
   $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="wo-title">
     <div class="modal-head"><h2 id="wo-title">Edit workout</h2><button class="btn small ghost" data-action="close">Close</button></div>
-    <form class="form-grid" data-form="workout-edit" data-id="${w.id}">
+    <form class="form-grid wo-form" data-form="workout-edit" data-id="${w.id}" data-kind="${esc(w.type === 'Gym' ? 'Weights' : w.type)}">
       <label class="field">Date<input class="input" type="date" name="date" value="${w.date}"></label>
-      <label class="field">Type<select class="input" name="type">${[...new Set(types.concat([w.type]))].map(t => `<option ${t === w.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <label class="field">Kind<select class="input" name="type" data-change="wo-kind">${kindOpts(w.type === 'Gym' ? 'Weights' : w.type)}</select></label>
+      <label class="field wo-dist">Distance (km)<input class="input" type="number" step="0.1" min="0" name="km" value="${w.km ?? ''}"></label>
       <label class="field">Minutes<input class="input" type="number" min="1" name="minutes" value="${w.minutes || 30}"></label>
       <label class="field">Note<input class="input" name="notes" value="${esc(w.notes || '')}"></label>
       <div class="full ex-wrap"><div class="extras-head"><b>What you did</b></div>
         <div class="ex-rows">${(w.exercises && w.exercises.length ? w.exercises : [{}]).map(x => exRowHtml(x)).join('')}</div>
         <button type="button" class="btn small ghost" data-action="ex-row">Add another exercise</button></div>
-      <div class="modal-foot full"><button class="btn primary" type="submit">Save</button><button class="btn ghost danger-link" type="button" data-action="wo-del" data-id="${w.id}">Delete workout</button></div>
+      <div class="modal-foot full"><div class="inline-form"><button class="btn primary" type="submit">Save</button><button class="btn" type="button" data-action="wo-copy" data-id="${w.id}">Copy to today</button></div><button class="btn ghost danger-link" type="button" data-action="wo-del" data-id="${w.id}">Delete workout</button></div>
     </form></div></div>`;
 }
 function openAudit() {
@@ -4692,7 +4946,7 @@ function completeTask(t) {
   const g = t.gigId && gigById(t.gigId);
   if (g && t.type === 'rehearsal') g.rehearsals.push(D.today());
   if (g && t.type === 'invoice') { g.invoiced = true; g.invoicedAt = D.today(); }
-  if (t.projectId) { const p = st.projects.find(p => p.id === t.projectId); if (p) { p.lastActivity = D.today(); const s = p.steps.find(s => s.text === t.title); if (s) s.done = true; } }
+  if (t.projectId) { const p = (st.projects || []).find(p => p.id === t.projectId); if (p) { p.lastActivity = D.today(); const s = p.steps.find(s => s.text === t.title); if (s) s.done = true; } }
   if (t.category === 'teaching') { const u = st.units.find(u => t.title.toLowerCase().includes(u.name.toLowerCase().split(' ').slice(0, 2).join(' '))); if (u) u.lastActivity = D.today(); }
   if (focus && focus.id === t.id) focus = null;
   return `Done: ${t.title}`;
@@ -4891,6 +5145,14 @@ const ACTIONS = {
   'tt-remove'(el) { const snap = Store.snapshot(); S().timetable = S().timetable.filter(c => c.id !== el.dataset.id); closeOverlay(); commit(); toast('Class removed', snap); },
   'tt-new'() { openTTEditor({ day: Math.min(5, Math.max(1, new Date().getDay())), time: '09:00', end: '10:00' }); },
   'tt-dup'(el) { const c = S().timetable.find(x => x.id === el.dataset.id); if (!c) return; closeOverlay(); openTTEditor({ day: c.day === 5 ? 1 : c.day + 1, time: c.time, end: c.end }); if (ttEdit) { ttEdit.title = c.title; ttEdit.color = c.color; const f = $('form[data-form=tt-block]'); if (f) { f.elements.title.value = c.title; [...f.elements.color].forEach(r => { r.checked = r.value === c.color; }); } } },
+  'page-rename'() {
+    const st = S(), names = st.settings.viewNames || (st.settings.viewNames = {}), def = (VIEWS.find(v => v[0] === VIEW) || [VIEW, VIEW])[1];
+    closeOverlay();
+    const n = prompt(`Name for this page (leave empty to go back to "${def}"):`, viewLabel(VIEW));
+    if (n === null) return;
+    if (n.trim() && n.trim() !== def) names[VIEW] = n.trim().slice(0, 24); else delete names[VIEW];
+    Store.save(); render(); toast(`Page is now called ${viewLabel(VIEW)}`);
+  },
   'tile-rename'(el) {
     const st = S(), k = el.dataset.k, names = st.settings.tileNames || (st.settings.tileNames = {});
     const cur = names[k] || k.split(':').slice(1).join(':');
@@ -4912,8 +5174,11 @@ const ACTIONS = {
   },
   'step-add'(el) {
     const t = taskById(el.dataset.id), inp = $('#step-new'), text = cap((inp && inp.value || '').trim()); if (!t || !text) return;
-    (t.steps = t.steps || []).push({ text, done: false }); Store.save(); render(); refreshTaskExtras(t.id); setTimeout(() => $('#step-new')?.focus(), 0);
+    const due = $('#step-new-due') && $('#step-new-due').value, time = $('#step-new-time') && $('#step-new-time').value;
+    (t.steps = t.steps || []).push({ text, done: false, due: due || (time ? D.today() : undefined), time: time || undefined }); Store.save(); render(); refreshTaskExtras(t.id); setTimeout(() => $('#step-new')?.focus(), 0);
   },
+  'step-due-edit'(el) { const k = `${el.dataset.id}:${el.dataset.i}`; stepDueOpen = stepDueOpen === k ? null : k; refreshTaskExtras(el.dataset.id); },
+  'step-due-clear'(el) { const t = taskById(el.dataset.id), s = t && t.steps[+el.dataset.i]; if (!s) return; delete s.due; delete s.time; stepDueOpen = null; Store.save(); render(); refreshTaskExtras(t.id); },
   'step-t'(el) { const t = taskById(el.dataset.id), s = t && t.steps[+el.dataset.i]; if (!s) return; s.done = !s.done; Store.save(); render(); refreshTaskExtras(t.id); },
   'step-del'(el) { const t = taskById(el.dataset.id); if (!t) return; t.steps.splice(+el.dataset.i, 1); Store.save(); render(); refreshTaskExtras(t.id); },
   'step-mv'(el) { const t = taskById(el.dataset.id), i = +el.dataset.i, j = i + +el.dataset.d; if (!t || j < 0 || j >= t.steps.length) return; [t.steps[i], t.steps[j]] = [t.steps[j], t.steps[i]]; Store.save(); render(); refreshTaskExtras(t.id); },
@@ -4932,6 +5197,7 @@ const ACTIONS = {
   },
   'wo-del'(el) { const snap = Store.snapshot(); S().fitness.workouts = S().fitness.workouts.filter(w => w.id !== el.dataset.id); closeOverlay(); commit(); toast('Workout deleted', snap); },
   'wo-edit'(el) { openWorkoutModal(el.dataset.id); },
+  'wo-copy'(el) { copyWorkout(el.dataset.id); },
   'rest-day'() { const st = S(), snap = Store.snapshot(); if (st.fitness.workouts.some(w => w.rest && w.date === D.today())) { toast('Today is already a rest day'); return; } st.fitness.workouts.push({ id: uid('w'), date: D.today(), type: 'Rest day', minutes: 0, notes: '', exercises: [], rest: true }); commit(); toast('Rest day logged. Enjoy it.', snap); },
   'bud-go'(el) { const fns = budFns(), i = fns.findIndex(x => x.id === budActive().id) + +el.dataset.d; if (fns[i]) { S().budget.activeId = fns[i].id; Store.save(); render(); } },
   'bud-open'(el) { S().budget.activeId = el.dataset.id; Store.save(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
@@ -4952,6 +5218,7 @@ const ACTIONS = {
   'bud-note'(el) { openBudNote(el.dataset.id); },
   'bud-fy'(el) { const st = S(), y = +el.dataset.y, s = st.settings.open_budfy || (st.settings.open_budfy = [fyOfDate(D.today())]), i = s.indexOf(y); if (i >= 0) s.splice(i, 1); else s.push(y); Store.save(); render(); },
   'bud-chart'(el) { budChartPeriod = el.dataset.p; render(); },
+  'bud-chart-what'(el) { budChartWhat = el.dataset.w; render(); },
   'mark-t'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; const i = +el.dataset.i, d = t.marking.done || (t.marking.done = []); const k = d.indexOf(i); if (k >= 0) d.splice(k, 1); else d.push(i); Store.save(); render(); refreshTaskExtras(t.id); if (d.length === t.marking.total) toast(`All ${t.marking.total} marked for ${t.title}`); },
   'mark-add'(el) { const t = taskById(el.dataset.id); if (!t || !t.marking) return; t.marking.total = Math.max(1, Math.min(400, t.marking.total + +el.dataset.d)); t.marking.done = (t.marking.done || []).filter(i => i < t.marking.total); Store.save(); render(); refreshTaskExtras(t.id); },
   'del-task'(el) {
@@ -4970,6 +5237,37 @@ const ACTIONS = {
     else if (k === 'tonight') { const d = new Date(now); d.setHours(19, 0, 0, 0); if (d < now) d.setDate(d.getDate() + 1); inp.value = local(d); }
     else if (k === 'tomorrow') { const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(8, 0, 0, 0); inp.value = local(d); }
     else if (k === 'due') { const due = f.elements.due && f.elements.due.value; if (!due) { toast('Set a due date first'); return; } inp.value = `${due}T08:00`; }
+  },
+  'bf-open'(el) { boards().active = el.dataset.id; Store.save(); render(); },
+  'bf-new'() { openFolderEditor(null); },
+  'bf-edit'(el) { openFolderEditor(el.dataset.id); },
+  'bf-del'(el) {
+    const b = boards(), f = b.folders.find(x => x.id === el.dataset.id); if (!f) return;
+    const snap = Store.snapshot(), n = b.notes.filter(x => x.folderId === f.id).length;
+    b.folders = b.folders.filter(x => x.id !== f.id); b.notes = b.notes.filter(x => x.folderId !== f.id); b.active = b.folders[0] ? b.folders[0].id : null;
+    closeOverlay(); commit(); toast(`Deleted ${f.name}${n ? ` and its ${plural(n, 'sticky', 'stickies')}` : ''}`, snap);
+  },
+  'st-new'() { const n = newSticky(); if (!n) return; Store.save(); render(); openSticky(n.id); setTimeout(() => $('#overlay input[data-f=title]')?.focus(), 0); },
+  'st-close'() { closeOverlay(); render(); },
+  'st-colour'(el) { const n = boards().notes.find(x => x.id === el.dataset.id); if (!n) return; n.color = el.dataset.c; Store.save(); openSticky(n.id); render(); },
+  'st-check'(el) { const n = boards().notes.find(x => x.id === el.dataset.id), c = n && n.checklist[+el.dataset.i]; if (!c) return; c.done = !c.done; n.updatedAt = D.today(); Store.save(); openSticky(n.id); render(); },
+  'st-check-del'(el) { const n = boards().notes.find(x => x.id === el.dataset.id); if (!n) return; n.checklist.splice(+el.dataset.i, 1); Store.save(); openSticky(n.id); render(); },
+  'st-check-add'(el) { const n = boards().notes.find(x => x.id === el.dataset.id), inp = $('#st-new-item'), t = cap((inp && inp.value || '').trim()); if (!n || !t) return; (n.checklist = n.checklist || []).push({ text: t, done: false }); n.updatedAt = D.today(); Store.save(); openSticky(n.id); render(); setTimeout(() => $('#st-new-item')?.focus(), 0); },
+  'st-del'(el) { const b = boards(), snap = Store.snapshot(), n = b.notes.find(x => x.id === el.dataset.id); b.notes = b.notes.filter(x => x.id !== el.dataset.id); closeOverlay(); commit(); toast(`Deleted ${n && n.title ? `"${n.title}"` : 'sticky'}`, snap); },
+  'st-task'(el) {
+    const st = S(), n = boards().notes.find(x => x.id === el.dataset.id); if (!n) return;
+    const title = n.title || (n.text || '').split('\n')[0].slice(0, 80) || 'Idea from a sticky';
+    const p = parseThought(title) || { title, category: 'personal', type: 'task', priority: 2 };
+    if (p.category === 'someday') p.category = 'personal';
+    fileItem(p);
+    const t = st.tasks[st.tasks.length - 1]; if (t) { t.notes = n.text || ''; t.steps = (n.checklist || []).map(c => ({ text: c.text, done: !!c.done })); }
+    closeOverlay(); commit(); toast(`"${t ? t.title : title}" added to ${CATS[t ? t.category : 'personal']}. The sticky stays on your board.`);
+  },
+  'st-tidy'() {
+    const fo = activeFolder(), mine = boards().notes.filter(n => n.folderId === fo.id).sort((a, b) => (a.y - b.y) || (a.x - b.x));
+    const w = ($('#board-canvas') || { clientWidth: 900 }).clientWidth, per = Math.max(1, Math.floor((w - 16) / (STICKY_W + 16)));
+    const snap = Store.snapshot(); mine.forEach((n, i) => { n.x = 16 + (i % per) * (STICKY_W + 16); n.y = 16 + Math.floor(i / per) * 210; });
+    commit(); toast('Stickies tidied into rows', snap);
   },
   'month-fold'(el) { const s = monthOpenSet(el.dataset.kind), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
   'pay-month'(el) { const s = payOpenSet(), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
@@ -5017,11 +5315,11 @@ const ACTIONS = {
     const t = taskById(el.dataset.id); if (!t) return;
     const snap = Store.snapshot();
     const cat = scoreCats(t.title.toLowerCase()) || 'personal';
-    createProject(t.title, cat, t.id);
+    createProject(t.title, cat, t);
     S().tasks = S().tasks.filter(x => x.id !== t.id);
     closeOverlay(); VIEW = 'someday'; history.replaceState(null, '', '#someday'); commit();
-    toast(`"${t.title}" is now a project. Add its first step.`, snap);
-    setTimeout(() => $('.project input')?.focus(), 0);
+    toast(`"${t.title}" is now a project. Add stickies for its pieces.`, snap);
+    setTimeout(() => $('#board-canvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
   },
   'step-toggle'(el) { const p = S().projects.find(p => p.id === el.dataset.id); const s = p.steps[+el.dataset.i]; s.done = !s.done; p.lastActivity = D.today(); commit(); },
   'step-to-task'(el) {
@@ -5061,7 +5359,7 @@ function renderTabbar() {
   bar.innerHTML = TABS.map(([id, label]) => {
     const on = id === 'more' ? inMore : VIEW === id;
     return `<button data-action="${id === 'more' ? 'more-open' : 'nav'}" data-view="${id}" ${on ? 'aria-current="page"' : ''}>
-      <svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[id]}</svg><span>${label}</span>${id === 'today' && late ? `<b class="badge">${late}</b>` : ''}</button>`;
+      <svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[id]}</svg><span>${id === 'more' ? label : esc((S().settings.viewNames || {})[id] || label)}</span>${id === 'today' && late ? `<b class="badge">${late}</b>` : ''}</button>`;
   }).join('');
 }
 function openMoreSheet() {
@@ -5069,11 +5367,12 @@ function openMoreSheet() {
   const item = (action, label, sub, extra = '') => `<button class="sheet-item" data-action="${action}" ${extra}><span>${label}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
   $('#overlay').innerHTML = `<div class="scrim sheet-scrim" data-action="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="More">
     <div class="sheet-grab" aria-hidden="true"></div>
-    ${item('nav', 'Inbox', inboxN ? plural(inboxN, 'unsorted thought') : 'Dump thoughts and sort them', 'data-view="inbox"')}
-    ${item('nav', 'Budget', 'This fortnight’s money', 'data-view="budget"')}
-    ${item('nav', 'Fitness', 'Workouts, lifts and weight', 'data-view="fitness"')}
-    ${item('nav', 'Someday', 'Ideas and projects', 'data-view="someday"')}
+    ${item('nav', esc(viewLabel('inbox')), inboxN ? plural(inboxN, 'unsorted thought') : 'Dump thoughts and sort them', 'data-view="inbox"')}
+    ${item('nav', esc(viewLabel('budget')), 'This fortnight’s money', 'data-view="budget"')}
+    ${item('nav', esc(viewLabel('fitness')), 'Workouts, lifts and weight', 'data-view="fitness"')}
+    ${item('nav', esc(viewLabel('someday')), 'Ideas and projects', 'data-view="someday"')}
     ${['today', 'teaching', 'music', 'life', 'budget', 'fitness', 'someday', 'inbox'].includes(VIEW) ? item('tile-arrange', arranging ? 'Finish arranging' : 'Arrange tiles on this page', 'Reorder or rename tiles') : ''}
+    ${item('page-rename', 'Rename this page', `Now called “${esc(viewLabel(VIEW))}”`)}
     <div class="sheet-sep"></div>
     ${item('cal-open', 'Calendar and sync', Sync.error || (Sync.lastOk ? `This ${deviceName()}: synced ${agoText(Sync.lastOk)}` : Cal.firstError() || ''))}
     ${item('ai-settings', 'Teaching partner settings', '')}
@@ -5257,9 +5556,15 @@ function boot() {
     } else if (kind === 'mark-set') {
       const t = taskById(f.dataset.id), n = Math.max(1, Math.min(400, +val('n') || 0)); if (!t || !n) return;
       t.marking = { total: n, done: [] }; Store.save(); render(); refreshTaskExtras(t.id);
+    } else if (kind === 'folder') {
+      const b = boards(), name = val('name'); if (!name) return;
+      const color = (f.querySelector('input[name=color]:checked') || {}).value || FOLDER_COLOURS[0];
+      if (f.dataset.id) Object.assign(b.folders.find(x => x.id === f.dataset.id) || {}, { name: cap(name), color });
+      else { const nf = { id: uid('bf'), name: cap(name), color }; b.folders.push(nf); b.active = nf.id; }
+      closeOverlay(); commit();
     } else if (kind === 'bud-note') {
       const fn = budActive(), i = fn && fn.items.find(x => x.id === f.dataset.id); if (!i) return;
-      i.note = f.elements.note.value.trim(); const ty = val('type'); i.type = ty === budTypeOf({ name: i.name }) ? undefined : ty;
+      i.note = f.elements.note.value.trim(); const ty = val('type'); i.type = ty === '__new' || ty === budTypeOf({ name: i.name }) ? undefined : ty;
       closeOverlay(); commit();
     } else if (kind === 'bud-first') {
       const f = newFortnight(null, val('start') || D.today()); st.budget.fns.push(f); st.budget.activeId = f.id; commit();
@@ -5324,13 +5629,15 @@ function boot() {
       const w = st.fitness.workouts.find(x => x.id === f.dataset.id); if (!w) return;
       const snap = Store.snapshot();
       w.exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
-      Object.assign(w, { date: val('date') || w.date, type: val('type') || w.type, minutes: val('type') === 'Rest day' ? 0 : +val('minutes') || w.minutes, notes: val('notes'), rest: val('type') === 'Rest day' || undefined });
+      Object.assign(w, { date: val('date') || w.date, type: val('type') || w.type, minutes: val('type') === 'Rest day' ? 0 : +val('minutes') || w.minutes, km: DIST_KINDS.test(val('type')) && f.elements.km.value !== '' ? Math.round(+f.elements.km.value * 10) / 10 : undefined, notes: val('notes'), rest: val('type') === 'Rest day' || undefined });
+      if (!LIFT_KINDS.test(w.type)) w.exercises = [];
       closeOverlay(); commit(); toast('Workout updated', snap);
     }
     else if (kind === 'workout') {
       const exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
       const type = f.elements.type.value === 'Other' && exercises.length ? 'Gym' : val('type'), rest = type === 'Rest day';
-      st.fitness.workouts.push({ id: uid('w'), date: val('date') || D.today(), type, minutes: rest ? 0 : +val('minutes') || 30, notes: val('notes'), exercises: rest ? [] : exercises, rest: rest || undefined });
+      const km = DIST_KINDS.test(type) && f.elements.km && f.elements.km.value !== '' ? Math.round(+f.elements.km.value * 10) / 10 : undefined;
+      st.fitness.workouts.push({ id: uid('w'), date: val('date') || D.today(), type, minutes: rest ? 0 : +val('minutes') || 30, km, notes: val('notes'), exercises: rest || !LIFT_KINDS.test(type) ? [] : exercises, rest: rest || undefined });
       commit(); toast(`${type} logged${exercises.length ? ` with ${plural(exercises.length, 'exercise')}` : ''}`);
     }
     else if (kind === 'weight') { const kg = parseFloat(val('kg')); if (!(kg > 0)) return; const w = st.fitness.weights.filter(x => x.date !== D.today()); w.push({ date: D.today(), kg: Math.round(kg * 10) / 10 }); st.fitness.weights = w.sort(byDate); commit(); }
@@ -5353,6 +5660,20 @@ function boot() {
     const kind = el.dataset.change;
     if (kind === 'setlist-pick') { activeSetlist = el.value; render(); }
     else if (kind === 'venues-fy') { S().settings.venuesFY = +el.value; Store.save(); render(); }
+    else if (kind === 'step-due') { const t = taskById(el.dataset.id), s = t && t.steps[+el.dataset.i]; if (!s) return; s[el.dataset.f] = el.value || undefined; if (el.dataset.f === 'time' && el.value && !s.due) s.due = D.today(); Store.save(); render(); refreshTaskExtras(t.id); }
+    else if (kind === 'wo-kind') { const f = el.closest('form'); if (f) f.dataset.kind = el.value; }
+    else if (kind === 'fit-metric') { fitMetric = el.value; S().settings.fitMetric = el.value; Store.save(); render(); }
+    else if (kind === 'st-field') { const n = boards().notes.find(x => x.id === el.dataset.id); if (!n) return; n.updatedAt = D.today(); n[el.dataset.f] = el.dataset.f === 'folderId' ? el.value : el.value.trim(); Store.save(); if (el.dataset.f === 'folderId') { boards().active = el.value; } }
+    else if (kind === 'bud-type-pick') {
+      if (el.value !== '__new') return;
+      const name = (prompt('Name for the new category (for example: Coffee, Kids activities, Car loan):') || '').trim();
+      if (!name) { el.selectedIndex = 0; return; }
+      const b = S().budget, k = 'c_' + name.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 24);
+      b.customTypes = b.customTypes || [];
+      if (!budTypes().some(t => t[0] === k)) b.customTypes.push({ k, label: cap(name), color: MARK_FUN.colours[b.customTypes.length % MARK_FUN.colours.length] });
+      Store.save();
+      const opt = document.createElement('option'); opt.value = k; opt.textContent = cap(name); el.insertBefore(opt, el.lastElementChild); el.value = k;
+    }
     else if (kind === 'bud-field') { budField(el); }
     else if (kind === 'bud-pick') { S().budget.activeId = el.value; Store.save(); render(); }
     else if (kind === 'exp-fy') { expFY = +el.value; openExpensesList(); }
@@ -5373,6 +5694,16 @@ function boot() {
   $('#receipt-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) expReceiptChosen(f); });
   $('#inv-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) uploadInvoiceTemplate(f); });
   $('#setlist-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) setlistImportFile(f); });
+  document.addEventListener('pointerdown', stPointerDown);
+  document.addEventListener('pointermove', stPointerMove);
+  document.addEventListener('pointerup', stPointerUp);
+  document.addEventListener('pointercancel', () => { if (stDrag) { stDrag = null; render(); } });
+  document.addEventListener('dblclick', e => {
+    const c = e.target.closest && e.target.id === 'board-canvas' ? e.target : null; if (!c) return;
+    const r = c.getBoundingClientRect(), n = newSticky({ x: e.clientX - r.left - STICKY_W / 2, y: e.clientY - r.top - 20 });
+    if (n) { Store.save(); render(); openSticky(n.id); setTimeout(() => $('#overlay input[data-f=title]')?.focus(), 0); }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('sticky')) openSticky(e.target.dataset.sticky); });
   document.addEventListener('pointerdown', ttPointerDown);
   document.addEventListener('click', ttClick);
   document.addEventListener('pointermove', ttPointerMove);
