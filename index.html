@@ -675,6 +675,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .week .rest i{background:repeating-linear-gradient(45deg,var(--surface-2) 0 4px,color-mix(in srgb,var(--c-health) 30%,var(--surface)) 4px 8px);border:1px solid color-mix(in srgb,var(--c-health) 40%,transparent)}
 .fy-head{padding:4px 0;font-size:14.5px}
 .tbl tr.fy-row td{vertical-align:middle}
+.remind-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.remind-row input{max-width:240px}
+.remind-row .seg button{font-size:13px;padding:5px 9px}
+.remind-tag{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -926,7 +930,7 @@ const Store = {
     try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const s = JSON.parse(raw); if (s && s.version === 1) { this.state = migrate(s); return; } } } catch (e) {}
     this.state = migrate(makeSampleData()); this.save();
   },
-  save() { this.state.meta = { ...(this.state.meta || {}), updatedAt: Date.now(), device: deviceName() }; this.saveLocal(); if (typeof Sync !== 'undefined') Sync.dirty(); },
+  save() { this.state.meta = { ...(this.state.meta || {}), updatedAt: Date.now(), device: deviceName() }; this.saveLocal(); if (typeof Sync !== 'undefined') Sync.dirty(); if (typeof Reminders !== 'undefined') Reminders.schedule(); },
   saveLocal() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state)); } catch (e) {} },
   snapshot() { return JSON.stringify(this.state); },
   restore(json) { this.state = JSON.parse(json); this.save(); }
@@ -1160,6 +1164,7 @@ function createProject(title, category, fromTaskId) {
 }
 
 function fileItem(p) {
+  applyRemindMe(p);
   if (p && p.category === 'teaching' && p.type !== 'assessment' && /^mark(ing)?\b/i.test(p.title || '')) p.type = 'assessment';
   if (p && p.type === 'assessment' && !p.marking) { const n = markingFromText(p.raw || p.title); if (n) { p.marking = { total: n, done: [] }; p.title = p.title.replace(/\s*\(\d{1,3}\)\s*/, ' ').trim(); } }
   const st = S();
@@ -1172,7 +1177,7 @@ function fileItem(p) {
     return 'Gigs';
   }
   if (p.suggestProject && p.makeProject) { createProject(p.title, p.category); return 'Projects'; }
-  st.tasks.push({ id: uid('t'), title: p.title, marking: p.marking || undefined, category: p.category, type: p.type, due: p.due || null, time: p.time || null,
+  st.tasks.push({ id: uid('t'), title: p.title, remindAt: p.remindAt || undefined, marking: p.marking || undefined, category: p.category, type: p.type, due: p.due || null, time: p.time || null,
     priority: +p.priority || 2, estimate: p.estimate, notes: p.notes || '', status: 'todo', createdAt: D.today(), doneAt: null,
     gigId: p.gigId || null, projectId: null, snoozed: null });
   return CATS[p.category];
@@ -1668,7 +1673,7 @@ function schoolHoliday(day) {
   return st.calendars.flatMap(c => st.events[c.id] || []).find(e => e.allDay && /school\s*holiday|term\s*break|school\s*break/i.test(e.title) && e.date <= day && e.endDate >= day) || null;
 }
 /** Timed things today: calendar events, gigs and scheduled tasks. */
-const defaultRole = name => /\bgigs?\b/i.test(name || '') ? 'gigs' : /daily briefing/i.test(name || '') ? 'off' : 'show';
+const defaultRole = name => /\bgigs?\b/i.test(name || '') ? 'gigs' : /daily briefing|dashboard reminders/i.test(name || '') ? 'off' : 'show';
 function eventKind(title, calName) {
   if (/\bbills?\b/i.test(calName || '')) return 'bill';
   if (/holiday/i.test(calName || '')) return 'holiday';
@@ -2075,6 +2080,7 @@ const Sync = {
     const from = d.data && d.data.meta && d.data.meta.device;
     next.meta = { rev: d.rev, updatedAt: d.updatedAt, device: from };
     Store.state = next; Store.saveLocal(); this.pending = false; this.lastFrom = from; this.lastFromAt = d.updatedAt;
+    Reminders.schedule();
     render(); if (!quiet) toast(`Brought in the latest changes from ${from && from !== deviceName() ? yourDevice(from) : 'your other device'}`);
   },
   async pull(reason) {
@@ -2113,6 +2119,7 @@ const Sync = {
   start() {
     if (this.started || !this.enabled()) return;
     this.started = true;
+    setTimeout(() => Reminders.push(true).catch(() => {}), 4000);
     const quiet = pr => pr && pr.catch && pr.catch(() => {});
     quiet(this.pull('start'));
     setInterval(() => quiet(this.pull('timer')), 60000);
@@ -2160,6 +2167,42 @@ const FileSync = {
   },
   trash(id) { if (this.enabled()) Sync.request('trashfile&id=' + encodeURIComponent(id)).catch(() => {}); }
 };
+/* ---------- Reminders on your phone ----------
+   Tasks with a "Remind me" time become short events in a separate "Dashboard reminders"
+   Google calendar (made by your script), each with a pop-up alert. Google Calendar on your
+   phone does the alerting, so it works even when the dashboard is closed. */
+const Reminders = {
+  timer: null, last: null, error: null, count: 0,
+  list() {
+    const soon = Date.now() - 60000;
+    return S().tasks.filter(t => t.status === 'todo' && t.remindAt && new Date(t.remindAt).getTime() > soon)
+      .map(t => ({ id: t.id, title: '⏰ ' + t.title, at: new Date(t.remindAt).toISOString(), notes: [t.notes, t.due ? `Due ${D.label(t.due)}` : ''].filter(Boolean).join('\n') }));
+  },
+  schedule() { if (!Sync.enabled()) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.push().catch(() => {}), 3000); },
+  async push(force) {
+    if (!Sync.enabled()) return;
+    const items = this.list(), key = JSON.stringify(items);
+    if (!force && key === this.last) return;
+    try {
+      const d = await Sync.request('reminders', { items });
+      if (d && d.ok) { this.last = key; this.error = null; this.count = items.length; }
+      else throw { kind: d && d.error === 'unknown_action' ? 'old_script' : 'x' };
+    } catch (e) { this.error = e && e.kind === 'old_script' ? 'Update your calendar script to turn on phone reminders.' : e && e.kind === 'script' ? `Reminders: ${e.message}` : 'Reminders couldn’t be sent just now; they’ll try again.'; }
+  }
+};
+/** "Tomorrow 8am" style label for a reminder time. */
+const remindLabel = at => { const d = new Date(at), day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; return `${D.label(day)} ${D.time(`${pad(d.getHours())}:${pad(d.getMinutes())}`)}`; };
+/** Turns "remind me to call the venue tomorrow 4pm" into a task with a reminder. */
+function applyRemindMe(p) {
+  if (!p || !/^\s*remind me\b/i.test(p.raw || '')) return p;
+  p.title = cap((p.title || '').replace(/^\s*remind me( to| about)?\s*/i, '')) || p.title;
+  let day = p.due || D.today(), time = p.time || (p.due ? '09:00' : null);
+  if (!time) { const d = new Date(Date.now() + 60 * 60000); day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; time = `${pad(d.getHours())}:${pad(Math.ceil(d.getMinutes() / 5) * 5 % 60)}`; }
+  if (new Date(`${day}T${time}`).getTime() < Date.now()) day = D.add(day, 1);
+  p.remindAt = `${day}T${time}`;
+  if (!p.due) p.due = day;
+  return p;
+}
 function renderSyncStatus() {
   const el = $('#sync-status'); if (!el) return;
   const on = Sync.enabled();
@@ -2441,7 +2484,7 @@ function taskRow(t, o = {}) {
   return `<li class="row ${t.status === 'done' ? 'is-done' : ''}">
     <button class="check" data-action="toggle-task" data-id="${t.id}" aria-label="${t.status === 'done' ? 'Mark not done' : 'Mark done'}: ${esc(t.title)}"></button>
     <div class="row-main"><button class="row-title" data-action="open-task" data-id="${t.id}">${taskColor(t) ? `<i class="cdot" style="background:${taskColor(t)}"></i>` : ''}${esc(t.title)}</button>
-      <div class="row-meta">${o.noCat ? '' : catTag(t.category)}${o.showType ? `<span>${TYPES[t.type] || ''}</span>` : ''}${g && !o.noGig ? `<span>${esc(g.venue)} gig</span>` : ''}${t.source === 'calendar' ? '<span>From calendar</span>' : ''}${(t.steps || []).length ? `<span>${t.steps.filter(s => s.done).length} of ${t.steps.length} steps</span>` : ''}${(t.files || []).length ? `<span>${plural(t.files.length, 'file')}</span>` : ''}${t.priority === 1 && t.status !== 'done' ? '<span class="pri">High priority</span>' : ''}${t.estimate && o.est ? `<span>${t.estimate} min</span>` : ''}</div></div>
+      <div class="row-meta">${o.noCat ? '' : catTag(t.category)}${o.showType ? `<span>${TYPES[t.type] || ''}</span>` : ''}${g && !o.noGig ? `<span>${esc(g.venue)} gig</span>` : ''}${t.remindAt && t.status === 'todo' && new Date(t.remindAt) > new Date() ? `<span class="remind-tag" title="Reminder on your phone">⏰ ${remindLabel(t.remindAt)}</span>` : ''}${t.source === 'calendar' ? '<span>From calendar</span>' : ''}${(t.steps || []).length ? `<span>${t.steps.filter(s => s.done).length} of ${t.steps.length} steps</span>` : ''}${(t.files || []).length ? `<span>${plural(t.files.length, 'file')}</span>` : ''}${t.priority === 1 && t.status !== 'done' ? '<span class="pri">High priority</span>' : ''}${t.estimate && o.est ? `<span>${t.estimate} min</span>` : ''}</div></div>
     ${o.noDue ? '' : dueChip(t)}<button class="row-del" data-action="del-task" data-id="${t.id}" aria-label="Delete ${esc(t.title)}" title="Delete">×</button></li>`;
 }
 const rows = (list, o, empty) => list.length ? `<ul class="rows">${list.map(t => taskRow(t, o)).join('')}</ul>` : `<p class="empty">${empty}</p>`;
@@ -4393,6 +4436,10 @@ function openTaskModal(id) {
       <label class="field">Kind<select class="input" name="type">${typeOpts}</select></label>
       <label class="field">Due<input class="input" type="date" name="due" value="${t.due || ''}"></label>
       <label class="field">Time<input class="input" type="time" name="time" value="${t.time || ''}"></label>
+      <div class="field full"><span>Remind me on my phone</span>
+        <div class="remind-row"><input class="input" type="datetime-local" name="remindAt" value="${t.remindAt || ''}" step="300" aria-label="Reminder date and time">
+          <div class="seg">${[['1h', 'In 1 hour'], ['tonight', 'Tonight 7pm'], ['tomorrow', 'Tomorrow 8am'], ['due', 'Morning it’s due'], ['clear', 'No reminder']].map(([k, l]) => `<button type="button" data-action="remind-pick" data-k="${k}">${l}</button>`).join('')}</div></div>
+        ${Sync.enabled() ? '' : '<small class="muted">Reminders reach your phone once this device is syncing through your calendar link.</small>'}</div>
       <label class="field">Priority<select class="input" name="priority">${[[1, 'High'], [2, 'Normal'], [3, 'Low']].map(([k, v]) => `<option value="${k}" ${t.priority === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
       <label class="field">Minutes it takes<input class="input" type="number" min="0" max="600" name="estimate" value="${t.estimate || ''}"></label>
       <label class="field full">Notes<textarea class="input" name="notes" rows="3">${esc(t.notes)}</textarea></label>
@@ -4533,6 +4580,7 @@ function openCalModal() {
       ${location.protocol === 'https:' ? `<div class="sync-box">
         <div class="sync-line"><b>This device</b><span>${esc(cap(deviceName()))}</span><button class="linkbtn" data-action="device-rename">Rename</button></div>
         <div class="sync-line"><b>Your data</b><span>${!Sync.enabled() ? 'Add your link below to sync with your other device' : Sync.error ? `<span class="warn-t">${esc(Sync.error)}</span>` : `Synced ${Sync.lastOk ? agoText(Sync.lastOk) : 'soon'}${(S().meta || {}).device && (S().meta || {}).device !== deviceName() ? `. Latest change came from ${esc(yourDevice(S().meta.device))}` : ''}`}</span><button class="linkbtn" data-action="sync-now">Sync now</button></div>
+        <div class="sync-line"><b>Reminders</b><span>${!Sync.enabled() ? 'Available once syncing is on' : Reminders.error ? `<span class="warn-t">${esc(Reminders.error)}</span>` : `${plural(Reminders.list().length, 'upcoming reminder')} in your "Dashboard reminders" calendar`}</span></div>
         <div class="sync-line"><b>Calendar</b><span>${Feed.error ? `<span class="warn-t">${esc(Feed.error)}</span>` : Cal.lastSynced() ? `Read ${agoText(Cal.lastSynced())} on this ${esc(deviceName())}` : 'Not read yet on this device'}</span></div>
       </div>` : ''}
       <label class="field">Calendar feed link<input class="input" id="feed-url" value="${esc(Feed.url())}" placeholder="https://script.google.com/macros/s/…/exec?key=…" autocomplete="off"></label>
@@ -4913,6 +4961,16 @@ const ACTIONS = {
     (t.files || []).forEach(f => { if (f.cloud) FileSync.trash(f.id); });
     commit(); toast(`Deleted "${t.title}"`, snap);
   },
+  'remind-pick'(el) {
+    const f = el.closest('form'), inp = f && f.elements.remindAt; if (!inp) return;
+    const k = el.dataset.k, local = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const now = new Date();
+    if (k === 'clear') inp.value = '';
+    else if (k === '1h') { const d = new Date(now.getTime() + 60 * 60000); d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0); inp.value = local(d); }
+    else if (k === 'tonight') { const d = new Date(now); d.setHours(19, 0, 0, 0); if (d < now) d.setDate(d.getDate() + 1); inp.value = local(d); }
+    else if (k === 'tomorrow') { const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(8, 0, 0, 0); inp.value = local(d); }
+    else if (k === 'due') { const due = f.elements.due && f.elements.due.value; if (!due) { toast('Set a due date first'); return; } inp.value = `${due}T08:00`; }
+  },
   'month-fold'(el) { const s = monthOpenSet(el.dataset.kind), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
   'pay-month'(el) { const s = payOpenSet(), k = el.dataset.k, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else s.push(k); Store.save(); render(); },
   'pay-all'(el) { const st = S(); st.settings.payOpen = el.dataset.open === '1' ? [...new Set(st.gigs.map(g => g.date.slice(0, 7)))] : []; Store.save(); render(); },
@@ -5159,6 +5217,7 @@ function boot() {
       const t = taskById(f.dataset.id); if (!t) return;
       t.title = val('title') || t.title; t.category = val('category'); t.type = val('type'); t.due = val('due') || null; t.time = val('time') || null;
       t.priority = +val('priority') || 2; t.estimate = +val('estimate') || null; t.notes = f.elements.notes.value;
+      t.remindAt = f.elements.remindAt && f.elements.remindAt.value ? f.elements.remindAt.value : undefined;
       if (t.source === 'calendar') t.userEdited = true;
       closeOverlay(); commit(); toast('Saved');
     } else if (kind === 'gig') {
