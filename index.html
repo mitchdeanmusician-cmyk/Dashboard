@@ -550,7 +550,6 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 @media (max-width:860px){
   .prompts{display:none}
   .arrange-box{display:none!important}
-  .board.arranging~*,.arranging .arrange-box{display:flex}
   .side{display:none}
   .main{padding:0 14px calc(156px + env(safe-area-inset-bottom,0px))!important}
   .board.arranging>section{outline-offset:2px}
@@ -732,6 +731,21 @@ tr.bdrop-before td{box-shadow:inset 0 3px 0 var(--accent)}
 tr.bdrop-after td{box-shadow:inset 0 -3px 0 var(--accent)}
 .bdrop-sec{outline:2px dashed var(--accent);outline-offset:4px;border-radius:10px}
 @media (max-width:860px){.btbl.bsec tr.bdrop-before{box-shadow:0 -3px 0 var(--accent)}.btbl.bsec tr.bdrop-after{box-shadow:0 3px 0 var(--accent)}.drag-h{font-size:20px;padding:6px 4px}}
+.ms-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.ms-cell{background:var(--surface-2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ms-cell>span:first-child{font-size:13px;color:var(--ink-2)}
+.ms-cell b{font-family:var(--font-display);font-size:22px;font-variant-numeric:tabular-nums}
+.ms-cell small{font-size:12.5px;color:var(--muted)}
+.ms-bar{display:block;height:6px;background:var(--surface);border-radius:99px;overflow:hidden;margin-top:6px}
+.ms-bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.ms-pie{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.ms-pie svg{width:120px;height:120px;flex:none}
+.ms-legend{list-style:none;margin:0;padding:0;flex:1;min-width:160px;display:grid;gap:4px;font-size:13.5px}
+.ms-legend li{display:grid;grid-template-columns:12px 1fr auto;gap:7px;align-items:center}
+.ms-legend i{width:10px;height:10px;border-radius:3px;background:var(--line)}
+.ms-legend b{font-variant-numeric:tabular-nums}
+.ms-note{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+.ms-pie-empty{background:var(--surface-2);border-radius:12px;padding:12px;margin-bottom:10px;font-size:14px;color:var(--ink-2)}
 </style>
 </head>
 <body>
@@ -2646,7 +2660,7 @@ function tileLayout() { const st = S(); st.settings.tiles = st.settings.tiles ||
 function arrangeTiles() {
   const view = $('#view');
   const secs = [...view.querySelectorAll('section.panel[data-fold], section.now[data-fold]')].filter(s => !s.parentElement.closest('section'));
-  if (secs.length < 2) return;
+  if (secs.length < 2) { pageButtons(false); if (arranging && isPhone()) phoneSettingsBar(null); return; }
   const spanOf = s => { const p = s.parentElement; return p.classList.contains('g-3') ? 4 : p.classList.contains('g-2') ? 6 : p.classList.contains('g-now') ? (s.classList.contains('now') ? 7 : 5) : 12; };
   secs.forEach((s, i) => { s.dataset.span = spanOf(s); s.dataset.tkey = s.querySelector('h2.fold-h').dataset.key; s.dataset.idx = i; });
   let top = secs[0]; while (top.parentElement !== view) top = top.parentElement;
@@ -2671,13 +2685,22 @@ function arrangeTiles() {
   view.querySelectorAll(':scope > .grid').forEach(g => { if (!g.children.length) g.remove(); });
   view.querySelectorAll(':scope > form.quick').forEach(f => view.insertBefore(f, board));
   // the Arrange button lives in each page's heading
-  if (arranging && isPhone()) { const done = document.createElement('div'); done.className = 'arrange-phone'; done.innerHTML = '<span>Arranging this page</span><button class="btn small primary" data-action="tile-arrange">Done</button><button class="btn small ghost" data-action="tile-reset">Reset</button>'; view.insertBefore(done, board); }
-  const vh = view.querySelector('.vhead');
-  if (vh && !vh.querySelector('[data-action=tile-arrange]')) {
-    const box = document.createElement('div'); box.className = 'inline-form arrange-box';
-    box.innerHTML = arranging ? `<button class="btn small primary" data-action="tile-arrange">Done arranging</button><button class="btn small ghost" data-action="page-rename">Rename page</button><button class="btn small ghost" data-action="tile-reset">Reset layout</button>` : `<button class="btn small ghost" data-action="tile-arrange">Arrange tiles</button>`;
-    vh.appendChild(box);
-  }
+  if (arranging && isPhone()) phoneSettingsBar(board);
+  pageButtons(true);
+}
+/** Phone: the page-settings bar (rename, and arrange if the page has tiles to arrange). */
+function phoneSettingsBar(board) {
+  const view = $('#view'), bar = document.createElement('div'); bar.className = 'arrange-phone';
+  bar.innerHTML = `<span>Page settings</span><button class="btn small ghost" data-action="page-rename">Rename</button>${board ? '<button class="btn small ghost" data-action="tile-reset">Reset</button>' : ''}<button class="btn small primary" data-action="tile-arrange">Done</button>`;
+  const vh = view.querySelector('.vhead'); view.insertBefore(bar, board || (vh ? vh.nextSibling : view.firstChild));
+}
+/** Buttons in each page's heading: Arrange tiles (when there are tiles to arrange) and Rename page. */
+function pageButtons(canArrange) {
+  const vh = $('#view .vhead'); if (!vh || vh.querySelector('.arrange-box')) return;
+  const box = document.createElement('div'); box.className = 'inline-form arrange-box';
+  box.innerHTML = arranging ? `<button class="btn small primary" data-action="tile-arrange">Done</button><button class="btn small ghost" data-action="page-rename">Rename page</button>${canArrange ? '<button class="btn small ghost" data-action="tile-reset">Reset layout</button>' : ''}`
+    : `<button class="btn small ghost" data-action="tile-arrange">⚙ Settings</button>`;
+  vh.appendChild(box);
 }
 function tileOrderNow() { return [...document.querySelectorAll('.board > section')].map(s => s.dataset.tkey); }
 let dragKey = null;
@@ -2800,6 +2823,7 @@ function viewToday() {
   <div class="grid g-2 section-gap">
     <section class="panel"><h2>Today and overdue</h2>${calToday.length ? `<ul class="rows" style="margin-bottom:10px">${calToday.map(e => `<li class="row"><span class="when-col">${e.allDay ? 'All day' : D.time(e.time)}</span><div class="row-main"><span>${e.color ? `<i class="cdot" style="background:${e.color}"></i>` : ''}${esc(e.title)}</span><div class="row-meta"><span>${esc(e.cal)}</span></div></div></li>`).join('')}</ul>` : ''}${rows(todayList, {}, calToday.length ? 'No tasks due today.' : 'Nothing due today. Use the panel above to pick something.')}</section>
     ${fitnessCard()}
+    ${moneySnapshot()}
   </div>
   <section class="panel section-gap"><h2>Coming up</h2>${tl}</section>`;
 }
@@ -4501,6 +4525,41 @@ function budDragUp() {
   else { let last = -1; list.forEach((x, k) => { if (x.sec === moved.sec) last = k; }); list.splice(last + 1, 0, moved); }
   commit(); if (d.kind === 'item') toast(`Moved ${moved.name}${d.sec ? ` to ${BUD_SECS.find(s => s[0] === moved.sec)[1]}` : ''}`, snap);
 }
+/** Money at a glance for the Snapshot page. */
+function moneySnapshot() {
+  const fns = budFns(), T = D.today();
+  const fn = fns.slice().reverse().find(f => f.start <= T && T < fnEnd(f)) || budActive();
+  const owed = S().gigs.filter(awaitingPayment).sort((a, b) => invoiceDue(a).localeCompare(invoiceDue(b)));
+  const owedSum = owed.reduce((a, g) => a + (gigFee(g) || 0), 0);
+  const toInvoice = S().gigs.filter(g => D.diff(g.date) < 0 && !g.invoiced && needsInvoice(g) && !g.reviewPending);
+  const pay = allCalEvents().filter(e => /pay ?day/i.test(e.title) && e.date >= T).map(e => e.date).sort()[0];
+  // spending breakdown (Actual used; Planned if nothing's been spent yet)
+  let pie = `<div class="ms-pie-empty">No budget yet. <button class="linkbtn" data-action="nav" data-view="budget">Start this fortnight</button></div>`;
+  if (fn) {
+    const spent = {}, planned = {};
+    fn.items.forEach(i => { const k = budTypeOf(i); spent[k] = (spent[k] || 0) + (+i.actual || 0); planned[k] = (planned[k] || 0) + budTr(i); });
+    const useSpent = Object.values(spent).some(v => v > 0), src = useSpent ? spent : planned;
+    const rows = budTypes().map(([k, l, c]) => ({ l, c, v: r2(src[k] || 0) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
+    const total = rows.reduce((a, x) => a + x.v, 0);
+    if (total) {
+      const R_ = 44, C = 2 * Math.PI * R_; let off = 0;
+      const arcs = rows.map(x => { const len = x.v / total * C, s = `<circle r="${R_}" cx="60" cy="60" fill="none" stroke="${x.c}" stroke-width="20" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"><title>${esc(x.l)}: ${money2(x.v)}</title></circle>`; off += len; return s; }).join('');
+      const top = rows.slice(0, 5), rest = rows.slice(5).reduce((a, x) => a + x.v, 0);
+      pie = `<div class="ms-pie"><svg viewBox="0 0 120 120" role="img" aria-label="${useSpent ? 'Spending' : 'Planned spending'} by category">${arcs}<text x="60" y="56" text-anchor="middle" font-size="9" fill="var(--muted)">${useSpent ? 'Spent' : 'Planned'}</text><text x="60" y="70" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${aud(Math.round(total))}</text></svg>
+        <ul class="ms-legend">${top.map(x => `<li><i style="background:${x.c}"></i><span>${esc(x.l)}</span><b>${money2(x.v).replace('.00', '')}</b></li>`).join('')}${rest ? `<li class="muted"><i></i><span>Everything else</span><b>${money2(rest).replace('.00', '')}</b></li>` : ''}</ul></div>
+        <p class="ms-note">${useSpent ? 'Spent' : 'Planned'} this fortnight, ${fnLabel(fn)}</p>`;
+    } else pie = `<div class="ms-pie-empty">Nothing planned or spent this fortnight yet.</div>`;
+  }
+  return `<section class="panel"><h2>Money</h2>
+    ${pie}
+    <div class="ms-grid">
+      <div class="ms-cell"><span>Owed to you</span><b>${aud(owedSum)}</b><small>${owed.length ? `${plural(owed.length, 'invoice')}, next due ${D.diff(invoiceDue(owed[0])) >= 0 ? (D.diff(invoiceDue(owed[0])) === 0 ? 'today' : 'in ' + plural(D.diff(invoiceDue(owed[0])), 'day')) : `<span class="pri">${plural(-D.diff(invoiceDue(owed[0])), 'day')} ago</span>`}` : 'Nothing waiting'}</small></div>
+      <div class="ms-cell"><span>To invoice</span><b>${toInvoice.length}</b><small>${toInvoice.length ? esc(listJoin(toInvoice.slice(0, 2).map(g => venueBaseName(g.venue)))) + (toInvoice.length > 2 ? ` and ${toInvoice.length - 2} more` : '') : 'All sent'}</small></div>
+      <div class="ms-cell"><span>Next payday</span><b>${pay ? D.label(pay) : '—'}</b><small>${pay ? (D.diff(pay) === 0 ? 'Today' : `In ${plural(D.diff(pay), 'day')}`) : 'Add "Payday" to your calendar'}</small></div>
+    </div>
+    <div class="inline-form" style="margin-top:10px"><button class="btn small" data-action="nav" data-view="budget">Open Budget</button><button class="btn small ghost" data-action="nav" data-view="music">Gigs and invoices</button></div>
+  </section>`;
+}
 function viewBudget() {
   const fns = budFns(), fn = budActive();
   const head = `<div class="vhead"><div><h1>Budget</h1><p>One fortnight at a time.</p></div></div>`;
@@ -5437,8 +5496,7 @@ function openMoreSheet() {
     ${item('nav', esc(viewLabel('budget')), 'This fortnight’s money', 'data-view="budget"')}
     ${item('nav', esc(viewLabel('fitness')), 'Workouts, lifts and weight', 'data-view="fitness"')}
     ${item('nav', esc(viewLabel('someday')), 'Ideas and projects', 'data-view="someday"')}
-    ${['today', 'teaching', 'music', 'life', 'budget', 'fitness', 'someday', 'inbox'].includes(VIEW) ? item('tile-arrange', arranging ? 'Finish arranging' : 'Arrange tiles on this page', 'Reorder or rename tiles') : ''}
-    ${item('page-rename', 'Rename this page', `Now called “${esc(viewLabel(VIEW))}”`)}
+    ${item('tile-arrange', arranging ? 'Close page settings' : 'Page settings', 'Rename this page, reorder and rename tiles')}
     <div class="sheet-sep"></div>
     ${item('cal-open', 'Calendar and sync', Sync.error || (Sync.lastOk ? `This ${deviceName()}: synced ${agoText(Sync.lastOk)}` : Cal.firstError() || ''))}
     ${item('ai-settings', 'Teaching partner settings', '')}
