@@ -723,6 +723,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .pie-legend li.waiting em{min-width:70px}
 .pie-empty{display:grid;place-items:center;border-radius:50%;border:30px solid var(--surface-2);color:var(--muted);font-size:13px;text-align:center;box-sizing:border-box}
 .pie-legend li{grid-template-columns:14px 1fr auto 70px}
+.wo-form .wo-trail,.wo-form .wo-hike{display:none}
+.wo-form[data-kind="Hiking"] .wo-trail,.wo-form[data-kind="Walking"] .wo-trail,.wo-form[data-kind="Run"] .wo-trail,.wo-form[data-kind="Bike"] .wo-trail,.wo-form[data-kind="Hiking"] .wo-hike{display:flex}
+.drag-h{background:none;border:0;color:var(--muted);cursor:grab;font-size:16px;padding:4px 3px;touch-action:none;border-radius:6px;line-height:1}
+.drag-h:hover{color:var(--ink);background:var(--surface-2)}
+tr.bdragging{opacity:.45}
+tr.bdrop-before td{box-shadow:inset 0 3px 0 var(--accent)}
+tr.bdrop-after td{box-shadow:inset 0 -3px 0 var(--accent)}
+.bdrop-sec{outline:2px dashed var(--accent);outline-offset:4px;border-radius:10px}
+@media (max-width:860px){.btbl.bsec tr.bdrop-before{box-shadow:0 -3px 0 var(--accent)}.btbl.bsec tr.bdrop-after{box-shadow:0 3px 0 var(--accent)}.drag-h{font-size:20px;padding:6px 4px}}
 </style>
 </head>
 <body>
@@ -4148,7 +4157,22 @@ const WORKOUT_KINDS = ['Weights', 'Cardio', 'Walking', 'Hiking', 'Run', 'Swim', 
 const DIST_KINDS = /^(cardio|walking|walk|hiking|hike|run|swim|bike|cycling)$/i;
 const LIFT_KINDS = /^(weights|gym|other)$/i;
 const kindOpts = sel => [...new Set(WORKOUT_KINDS.concat(sel && !WORKOUT_KINDS.includes(sel) ? [sel] : []))].map(k => `<option ${k === sel ? 'selected' : ''}>${esc(k)}</option>`).join('');
-const workoutText = w => w.rest ? '😴 Rest day' : `${esc(w.type === 'Gym' ? 'Weights' : w.type)}, ${w.minutes} min${w.km ? `, ${w.km} km` : ''}`;
+const HIKE_DIFFICULTY = ['Easy', 'Moderate', 'Hard', 'Very hard'];
+const ELEV_KINDS = /^(hiking|hike|walking|walk|run|bike|cycling)$/i;
+const workoutText = w => w.rest ? '😴 Rest day' : `${esc(w.type === 'Gym' ? 'Weights' : w.type)}${w.trail ? `: ${esc(w.trail)}` : ''}, ${w.minutes} min${w.km ? `, ${w.km} km` : ''}${w.elev ? `, ${w.elev} m up` : ''}${w.difficulty ? `, ${esc(w.difficulty)}` : ''}`;
+/** Trail name, elevation, difficulty and link fields (shown for hikes, walks, runs and rides). */
+const trailFields = (w = {}) => `
+  <label class="field wo-trail">Trail or route<input class="input" name="trail" value="${esc(w.trail || '')}" placeholder="e.g. Mt Tibrogargan summit"></label>
+  <label class="field wo-trail">Elevation gain (m)<input class="input" name="elev" type="number" min="0" max="9000" step="1" value="${w.elev ?? ''}" placeholder="e.g. 364"></label>
+  <label class="field wo-hike">Difficulty<select class="input" name="difficulty"><option value="">Not set</option>${HIKE_DIFFICULTY.map(d => `<option ${w.difficulty === d ? 'selected' : ''}>${d}</option>`).join('')}</select></label>
+  <label class="field wo-hike">AllTrails link<input class="input" name="link" type="url" value="${esc(w.link || '')}" placeholder="https://www.alltrails.com/…"></label>`;
+/** Reads the trail fields from a workout form. */
+function readTrail(f, type) {
+  const g = n => f.elements[n] ? f.elements[n].value.trim() : '';
+  if (!ELEV_KINDS.test(type)) return { trail: undefined, elev: undefined, difficulty: undefined, link: undefined };
+  const hike = /^(hiking|hike)$/i.test(type);
+  return { trail: g('trail') || undefined, elev: g('elev') === '' ? undefined : Math.max(0, Math.round(+g('elev'))), difficulty: hike && g('difficulty') || undefined, link: hike && /^https?:\/\//.test(g('link')) ? g('link') : undefined };
+}
 function copyWorkout(id) {
   const w = S().fitness.workouts.find(x => x.id === id); if (!w) return;
   closeOverlay(); if (VIEW !== 'fitness') go('fitness');
@@ -4159,6 +4183,7 @@ function copyWorkout(id) {
     f.dataset.kind = f.elements.type.value;
     f.elements.minutes.value = w.minutes || 30; f.elements.date.value = D.today(); f.elements.notes.value = w.notes || '';
     if (f.elements.km) f.elements.km.value = w.km || '';
+    ['trail', 'elev', 'difficulty', 'link'].forEach(k => { if (f.elements[k]) f.elements[k].value = w[k] ?? ''; });
     const box = f.querySelector('.ex-rows'); box.innerHTML = (w.exercises && w.exercises.length ? w.exercises : [{}]).map(x => exRowHtml(x)).join('');
     f.scrollIntoView({ behavior: 'smooth', block: 'start' });
     toast(`Copied your ${kind.toLowerCase()} session from ${D.label(w.date)}. Adjust anything, then press Log workout.`);
@@ -4169,17 +4194,17 @@ function progressTile() {
   const f = S().fitness, all = allWorkouts();
   const lifts = [...new Set(f.workouts.flatMap(w => (w.exercises || []).filter(x => x.kg != null).map(x => x.name)))].sort();
   const metric = fitMetric || S().settings.fitMetric || 'count';
-  const opts = [['count', 'Workouts per week'], ['minutes', 'Minutes per week'], ['km', 'Distance per week (km)']].concat(lifts.map(n => ['lift:' + n, `${n}: heaviest weight`]));
+  const opts = [['count', 'Workouts per week'], ['minutes', 'Minutes per week'], ['km', 'Distance per week (km)'], ['elev', 'Elevation gain per week (m)']].concat(lifts.map(n => ['lift:' + n, `${n}: heaviest weight`]));
   let pts = [], unit = '';
   if (metric.startsWith('lift:')) {
     const name = metric.slice(5).toLowerCase(); unit = 'kg';
     pts = f.workouts.slice().sort(byDate).map(w => { const xs = (w.exercises || []).filter(x => x.name.toLowerCase() === name && x.kg != null); return xs.length ? { label: D.parse(w.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }), v: Math.max(...xs.map(x => x.kg)), tip: `${D.label(w.date)}: ${Math.max(...xs.map(x => x.kg))} kg${xs[0].sets ? `, ${xs[0].sets}×${xs[0].reps || '?'}` : ''}` } : null; }).filter(Boolean).slice(-16);
   } else {
-    unit = metric === 'minutes' ? 'min' : metric === 'km' ? 'km' : '';
+    unit = metric === 'minutes' ? 'min' : metric === 'km' ? 'km' : metric === 'elev' ? 'm' : '';
     const ws0 = D.weekStart();
     for (let k = 11; k >= 0; k--) {
       const a = D.add(ws0, -7 * k), b = D.add(a, 6), list = all.filter(w => w.date >= a && w.date <= b);
-      const v = metric === 'minutes' ? list.reduce((s, w) => s + (+w.minutes || 0), 0) : metric === 'km' ? Math.round(list.reduce((s, w) => s + (+w.km || 0), 0) * 10) / 10 : list.length;
+      const v = metric === 'elev' ? list.reduce((s, w) => s + (+w.elev || 0), 0) : metric === 'minutes' ? list.reduce((s, w) => s + (+w.minutes || 0), 0) : metric === 'km' ? Math.round(list.reduce((s, w) => s + (+w.km || 0), 0) * 10) / 10 : list.length;
       pts.push({ label: D.parse(a).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }), v, tip: `Week of ${D.parse(a).toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}: ${v}${unit ? ' ' + unit : metric === 'count' ? ` workout${v === 1 ? '' : 's'}` : ''}`, cur: k === 0 });
     }
   }
@@ -4200,7 +4225,7 @@ function lineChart(pts, unit, goal) {
     ${goal ? `<line x1="${L}" x2="${W - 6}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--c-health)" stroke-dasharray="5 5"/><text x="${L + 6}" y="${y(goal) - 5}" text-anchor="start" font-size="11" fill="var(--c-health)">Goal ${goal}</text>` : ''}
     <path d="${area}" fill="var(--c-health)" opacity=".12"/><path d="${path}" fill="none" stroke="var(--c-health)" stroke-width="2.6" stroke-linejoin="round"/>
     ${pts.map((p, i) => `<g><title>${esc(p.tip)}</title><circle cx="${x(i)}" cy="${y(p.v)}" r="${p.cur ? 5 : 3.8}" fill="${p.cur ? 'var(--surface)' : 'var(--c-health)'}" stroke="var(--c-health)" stroke-width="2"/>${i % every === 0 || i === n - 1 ? `<text x="${x(i)}" y="${H - 9}" text-anchor="${i === n - 1 ? 'end' : i === 0 ? 'start' : 'middle'}" font-size="11" fill="var(--muted)">${esc(p.label)}</text>` : ''}</g>`).join('')}
-  </svg>${unit ? `<p class="muted" style="margin:4px 0 0;font-size:13px">In ${unit === 'min' ? 'minutes' : unit}. Point at a dot for details.</p>` : ''}`;
+  </svg>${unit ? `<p class="muted" style="margin:4px 0 0;font-size:13px">In ${unit === 'min' ? 'minutes' : unit === 'm' ? 'metres climbed' : unit}. Point at a dot for details.</p>` : ''}`;
 }
 function viewFitness() {
   const f = S().fitness;
@@ -4219,6 +4244,7 @@ function viewFitness() {
         <label class="field">Minutes<input class="input" name="minutes" type="number" min="5" max="400" value="30"></label>
         <label class="field">Date<input class="input" name="date" type="date" value="${D.today()}"></label>
         <label class="field wo-dist">Distance (km)<input class="input" name="km" type="number" step="0.1" min="0" max="500" placeholder="e.g. 8.5"></label>
+        ${trailFields()}
         <label class="field">Note<input class="input" name="notes" placeholder="Optional"></label>
         <div class="full ex-wrap"><div class="extras-head"><b>What you did</b><span class="muted">Exercise, sets, reps and weight.</span></div>
           <datalist id="ex-names">${[...new Set(S().fitness.workouts.flatMap(w => (w.exercises || []).map(x => x.name)))].map(n => `<option value="${esc(n)}">`).join('')}</datalist>
@@ -4228,7 +4254,7 @@ function viewFitness() {
       </form>
       <h3>Recent</h3>
       ${plannedWorkouts().length ? `<p class="muted" style="margin:0 0 6px;font-size:14px">Coming up from your calendar: ${esc(listJoin(plannedWorkouts().slice(0, 3).map(x => `${x.title} ${D.label(x.date)}${x.time ? ' ' + D.time(x.time) : ''}`)))}.</p>` : ''}
-      <ul class="rows">${allWorkouts().concat(restDays()).slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${w.fromCal ? `${esc(w.type)}, ${w.minutes} min` : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${workoutText(w)}</button>${w.rest ? '' : `<button class="linkbtn wo-copy" data-action="wo-copy" data-id="${w.id}">Copy</button>`}`}${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
+      <ul class="rows">${allWorkouts().concat(restDays()).slice().sort(byDate).reverse().slice(0, 8).map(w => `<li class="row"><div class="row-main">${w.fromCal ? `${esc(w.type)}, ${w.minutes} min` : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${workoutText(w)}</button>${w.link ? `<a class="linkbtn wo-copy" href="${esc(w.link)}" target="_blank" rel="noopener">AllTrails</a>` : ''}${w.rest ? '' : `<button class="linkbtn wo-copy" data-action="wo-copy" data-id="${w.id}">Copy</button>`}`}${w.notes ? ` <span class="muted">${esc(w.notes)}</span>` : ''}${(w.exercises || []).length ? `<div class="row-meta ex-list">${w.exercises.map(x => `<span>${esc(exText(x))}</span>`).join('')}</div>` : ''}${w.fromCal ? `<div class="row-meta"><button class="linkbtn" data-action="wo-detail" data-date="${w.date}" data-type="${esc(w.type)}" data-min="${w.minutes}">Add what you did</button></div>` : ''}</div><span class="chip">${D.label(w.date)}</span>${w.fromCal ? '' : `<span class="mini"><button data-action="wo-del" data-id="${w.id}" aria-label="Delete workout">×</button></span>`}</li>`).join('')}</ul>
     </section>
   </div>
   <div class="grid g-3 section-gap">
@@ -4326,9 +4352,9 @@ const bNum = (v, fid, ph, extra = '') => `<input class="input bnum" inputmode="d
 function budSectionTile(fn, sec, label, t) {
   const items = fn.items.filter(i => i.sec === sec);
   return `<section class="panel"><h2>${label}</h2>
-    <div class="scroll-x"><table class="tbl btbl bsec"><thead><tr><th>Item</th><th class="num">Budget per FN</th><th class="num">Current saved</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">% of income</th><th></th></tr></thead><tbody>
-    ${items.map(i => `<tr class="bitem">
-      <td class="bcell-name"><div class="bname-wrap"><input class="input bname" data-change="bud-field" data-fid="i:${i.id}:name" value="${esc(i.name)}" aria-label="Item name"><button class="bnote-btn ${i.note ? 'has' : ''}" tabindex="-1" data-action="bud-note" data-id="${i.id}" aria-label="Notes for ${esc(i.name)}" title="${i.note ? esc(i.note) : 'Add a note'}">✎</button></div>${i.note ? `<div class="bnote">${esc(i.note)}</div>` : ''}</td>
+    <div class="scroll-x"><table class="tbl btbl bsec" data-bsec-table="${sec}"><thead><tr><th>Item</th><th class="num">Budget per FN</th><th class="num">Current saved</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">% of income</th><th></th></tr></thead><tbody>
+    ${items.map(i => `<tr class="bitem" data-bitem="${i.id}" data-bsec="${sec}">
+      <td class="bcell-name"><div class="bname-wrap"><button class="drag-h" data-bdrag="${i.id}" data-bkind="item" tabindex="-1" aria-hidden="true" title="Drag to move">⠿</button><input class="input bname" data-change="bud-field" data-fid="i:${i.id}:name" value="${esc(i.name)}" aria-label="Item name"><button class="bnote-btn ${i.note ? 'has' : ''}" tabindex="-1" data-action="bud-note" data-id="${i.id}" aria-label="Notes for ${esc(i.name)}" title="${i.note ? esc(i.note) : 'Add a note'}">✎</button></div>${i.note ? `<div class="bnote">${esc(i.note)}</div>` : ''}</td>
       <td class="num" data-label="Budget per FN">${bNum(i.budget, `i:${i.id}:budget`, '0')}</td>
       <td class="num" data-label="Current saved">${bNum(i.saved, `i:${i.id}:saved`, '0')}</td>
       <td class="num" data-label="Transferred">${i.transferred == null || i.transferred === '' ? `<input class="input bnum is-auto" inputmode="decimal" data-change="bud-field" data-fid="i:${i.id}:transferred" value="${budTr(i).toFixed(2)}" title="Budget − Current saved. Type a different amount to override." data-auto="${budTr(i).toFixed(2)}">` : bNum(i.transferred, `i:${i.id}:transferred`, '0', `title="Typed amount. Clear it to go back to Budget − Current saved."`)}</td>
@@ -4345,6 +4371,7 @@ function openBudNote(id) {
   $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="bn-title">
     <div class="modal-head"><h2 id="bn-title">${esc(i.name)}</h2><button class="btn small ghost" data-action="close">Close</button></div>
     <form class="form-grid" data-form="bud-note" data-id="${i.id}">
+      <label class="field full">Section<select class="input" name="sec">${BUD_SECS.map(([k, l]) => `<option value="${k}" ${i.sec === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       <label class="field full">Note<textarea class="input" name="note" rows="3" placeholder="e.g. Due 10 August, or what this was for">${esc(i.note || '')}</textarea></label>
       <label class="field full">Category (for the spending chart)<select class="input" name="type" data-change="bud-type-pick">${budTypes().map(([k, l]) => `<option value="${k}" ${budTypeOf(i) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}<option value="__new">Add a new category…</option></select></label>
       <div class="modal-foot full"><button class="btn primary" type="submit">Save</button></div>
@@ -4436,6 +4463,44 @@ async function exportBudget(scope) {
     if (ok) toast(`${name} saved: ${plural(fns.length, 'fortnight')}, with working formulas.`);
   } catch (e) { toast(e && e.message === 'load' ? 'Couldn’t load the spreadsheet tools. They need the internet the first time.' : 'Couldn’t make the spreadsheet.'); }
 }
+/* Moving budget lines: drag the ⠿ handle (mouse or finger). Items can move between sections. */
+let budDrag = null;
+function budDragDown(ev) {
+  const hnd = ev.target.closest && ev.target.closest('.drag-h[data-bdrag]'); if (!hnd) return;
+  ev.preventDefault();
+  const row = hnd.closest('tr'); budDrag = { id: hnd.dataset.bdrag, kind: hnd.dataset.bkind, row, target: null, where: null, sec: null };
+  row.classList.add('bdragging'); try { hnd.setPointerCapture(ev.pointerId); } catch (e) {}
+}
+function budDragMove(ev) {
+  if (!budDrag) return; ev.preventDefault();
+  document.querySelectorAll('.bdrop-before,.bdrop-after,.bdrop-sec').forEach(x => x.classList.remove('bdrop-before', 'bdrop-after', 'bdrop-sec'));
+  const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+  if (budDrag.kind === 'inc') {
+    const tr = els.map(e => e.closest && e.closest('tr[data-binc]')).find(Boolean);
+    if (tr && tr.dataset.binc !== budDrag.id) { const r = tr.getBoundingClientRect(), before = ev.clientY < r.top + r.height / 2; tr.classList.add(before ? 'bdrop-before' : 'bdrop-after'); budDrag.target = tr.dataset.binc; budDrag.where = before ? 'before' : 'after'; } else budDrag.target = null;
+  } else {
+    const tr = els.map(e => e.closest && e.closest('tr[data-bitem]')).find(Boolean);
+    const tbl = els.find(e => e.matches && e.matches('[data-bsec-table]')) || (els.find(e => e.matches && e.matches('section.panel')) || {}).querySelector?.('[data-bsec-table]');
+    if (tr && tr.dataset.bitem !== budDrag.id) { const r = tr.getBoundingClientRect(), before = ev.clientY < r.top + r.height / 2; tr.classList.add(before ? 'bdrop-before' : 'bdrop-after'); budDrag.target = tr.dataset.bitem; budDrag.where = before ? 'before' : 'after'; budDrag.sec = tr.dataset.bsec; }
+    else if (tbl && !tr) { tbl.classList.add('bdrop-sec'); budDrag.target = null; budDrag.sec = tbl.dataset.bsecTable; }
+    else { budDrag.target = null; budDrag.sec = null; }
+  }
+  if (ev.clientY < 70) window.scrollBy(0, -12); else if (ev.clientY > innerHeight - 90) window.scrollBy(0, 12);
+}
+function budDragUp() {
+  if (!budDrag) return;
+  const d = budDrag; budDrag = null;
+  document.querySelectorAll('.bdragging,.bdrop-before,.bdrop-after,.bdrop-sec').forEach(x => x.classList.remove('bdragging', 'bdrop-before', 'bdrop-after', 'bdrop-sec'));
+  const fn = budActive(); if (!fn) return;
+  const list = d.kind === 'inc' ? fn.income : fn.items, from = list.findIndex(x => x.id === d.id); if (from < 0) return;
+  if (d.kind === 'item' && !d.target && !d.sec) return;
+  if (d.kind === 'inc' && !d.target) return;
+  const snap = Store.snapshot(), [moved] = list.splice(from, 1);
+  if (d.kind === 'item' && d.sec) moved.sec = d.sec;
+  if (d.target) { let to = list.findIndex(x => x.id === d.target); if (d.where === 'after') to++; list.splice(to, 0, moved); }
+  else { let last = -1; list.forEach((x, k) => { if (x.sec === moved.sec) last = k; }); list.splice(last + 1, 0, moved); }
+  commit(); if (d.kind === 'item') toast(`Moved ${moved.name}${d.sec ? ` to ${BUD_SECS.find(s => s[0] === moved.sec)[1]}` : ''}`, snap);
+}
 function viewBudget() {
   const fns = budFns(), fn = budActive();
   const head = `<div class="vhead"><div><h1>Budget</h1><p>One fortnight at a time.</p></div></div>`;
@@ -4470,7 +4535,7 @@ function viewBudget() {
   </section>
   <section class="panel"><h2>Income</h2>
     <div class="scroll-x"><table class="tbl btbl"><thead><tr><th>Source</th><th class="num">Amount</th><th></th></tr></thead><tbody>
-    ${fn.income.map(x => `<tr><td><input class="input bname" data-change="bud-field" data-fid="n:${x.id}:name" value="${esc(x.name)}" aria-label="Income source"></td><td class="num">${bNum(x.amount, `n:${x.id}:amount`, '0')}</td><td><button class="linkbtn danger-link" tabindex="-1" data-action="bud-del-inc" data-id="${x.id}" aria-label="Remove ${esc(x.name)}">×</button></td></tr>`).join('')}
+    ${fn.income.map(x => `<tr data-binc="${x.id}"><td><div class="bname-wrap"><button class="drag-h" data-bdrag="${x.id}" data-bkind="inc" tabindex="-1" aria-hidden="true" title="Drag to move">⠿</button><input class="input bname" data-change="bud-field" data-fid="n:${x.id}:name" value="${esc(x.name)}" aria-label="Income source"></div></td><td class="num">${bNum(x.amount, `n:${x.id}:amount`, '0')}</td><td><button class="linkbtn danger-link" tabindex="-1" data-action="bud-del-inc" data-id="${x.id}" aria-label="Remove ${esc(x.name)}">×</button></td></tr>`).join('')}
     <tr class="tot"><td>Total income</td><td class="num">${money2(t.income)}</td><td></td></tr></tbody></table></div>
     <form class="inline-form" data-form="bud-add-inc" style="margin-top:10px"><input class="input" name="name" placeholder="Add income, e.g. Tax refund" aria-label="New income source"><input class="input bnum" name="amount" inputmode="decimal" placeholder="Amount" aria-label="Amount"><button class="btn small" type="submit">Add</button></form>
   </section>
@@ -4774,6 +4839,7 @@ function openWorkoutModal(id) {
       <label class="field">Date<input class="input" type="date" name="date" value="${w.date}"></label>
       <label class="field">Kind<select class="input" name="type" data-change="wo-kind">${kindOpts(w.type === 'Gym' ? 'Weights' : w.type)}</select></label>
       <label class="field wo-dist">Distance (km)<input class="input" type="number" step="0.1" min="0" name="km" value="${w.km ?? ''}"></label>
+      ${trailFields(w)}
       <label class="field">Minutes<input class="input" type="number" min="1" name="minutes" value="${w.minutes || 30}"></label>
       <label class="field">Note<input class="input" name="notes" value="${esc(w.notes || '')}"></label>
       <div class="full ex-wrap"><div class="extras-head"><b>What you did</b></div>
@@ -5564,6 +5630,7 @@ function boot() {
       closeOverlay(); commit();
     } else if (kind === 'bud-note') {
       const fn = budActive(), i = fn && fn.items.find(x => x.id === f.dataset.id); if (!i) return;
+      if (f.elements.sec && f.elements.sec.value !== i.sec) { const k = fn.items.indexOf(i); fn.items.splice(k, 1); i.sec = f.elements.sec.value; let last = -1; fn.items.forEach((x, j) => { if (x.sec === i.sec) last = j; }); fn.items.splice(last + 1, 0, i); }
       i.note = f.elements.note.value.trim(); const ty = val('type'); i.type = ty === '__new' || ty === budTypeOf({ name: i.name }) ? undefined : ty;
       closeOverlay(); commit();
     } else if (kind === 'bud-first') {
@@ -5630,6 +5697,7 @@ function boot() {
       const snap = Store.snapshot();
       w.exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
       Object.assign(w, { date: val('date') || w.date, type: val('type') || w.type, minutes: val('type') === 'Rest day' ? 0 : +val('minutes') || w.minutes, km: DIST_KINDS.test(val('type')) && f.elements.km.value !== '' ? Math.round(+f.elements.km.value * 10) / 10 : undefined, notes: val('notes'), rest: val('type') === 'Rest day' || undefined });
+      Object.assign(w, readTrail(f, w.type));
       if (!LIFT_KINDS.test(w.type)) w.exercises = [];
       closeOverlay(); commit(); toast('Workout updated', snap);
     }
@@ -5637,7 +5705,7 @@ function boot() {
       const exercises = [...f.querySelectorAll('.ex-row')].map(r => ({ name: cap(r.querySelector('[name=ex_name]').value.trim()), sets: +r.querySelector('[name=ex_sets]').value || null, reps: +r.querySelector('[name=ex_reps]').value || null, kg: r.querySelector('[name=ex_kg]').value === '' ? null : +r.querySelector('[name=ex_kg]').value })).filter(x => x.name);
       const type = f.elements.type.value === 'Other' && exercises.length ? 'Gym' : val('type'), rest = type === 'Rest day';
       const km = DIST_KINDS.test(type) && f.elements.km && f.elements.km.value !== '' ? Math.round(+f.elements.km.value * 10) / 10 : undefined;
-      st.fitness.workouts.push({ id: uid('w'), date: val('date') || D.today(), type, minutes: rest ? 0 : +val('minutes') || 30, km, notes: val('notes'), exercises: rest || !LIFT_KINDS.test(type) ? [] : exercises, rest: rest || undefined });
+      st.fitness.workouts.push({ id: uid('w'), date: val('date') || D.today(), type, minutes: rest ? 0 : +val('minutes') || 30, km, ...readTrail(f, type), notes: val('notes'), exercises: rest || !LIFT_KINDS.test(type) ? [] : exercises, rest: rest || undefined });
       commit(); toast(`${type} logged${exercises.length ? ` with ${plural(exercises.length, 'exercise')}` : ''}`);
     }
     else if (kind === 'weight') { const kg = parseFloat(val('kg')); if (!(kg > 0)) return; const w = st.fitness.weights.filter(x => x.date !== D.today()); w.push({ date: D.today(), kg: Math.round(kg * 10) / 10 }); st.fitness.weights = w.sort(byDate); commit(); }
@@ -5694,6 +5762,9 @@ function boot() {
   $('#receipt-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) expReceiptChosen(f); });
   $('#inv-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) uploadInvoiceTemplate(f); });
   $('#setlist-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) setlistImportFile(f); });
+  document.addEventListener('pointerdown', budDragDown);
+  document.addEventListener('pointermove', budDragMove, { passive: false });
+  document.addEventListener('pointerup', budDragUp);
   document.addEventListener('pointerdown', stPointerDown);
   document.addEventListener('pointermove', stPointerMove);
   document.addEventListener('pointerup', stPointerUp);
