@@ -759,6 +759,13 @@ tr.bdrop-after td{box-shadow:inset 0 -3px 0 var(--accent)}
 .ms-h .muted{font-weight:500;font-size:13px}
 .ms-bills .row{padding:6px 0}
 .ms-amt{font-variant-numeric:tabular-nums;min-width:64px;text-align:right;font-size:14px}
+.goal-top .check{margin-right:8px;flex:none}
+.goal-top{align-items:center}
+.goal-top b{flex:1}
+.goal.done{opacity:.75}
+.goal.done b{text-decoration:line-through;text-decoration-color:var(--muted)}
+.confetti{position:fixed;width:8px;height:12px;border-radius:2px;z-index:200;pointer-events:none;animation:confetti 1s cubic-bezier(.2,.7,.4,1) forwards}
+@keyframes confetti{to{transform:translate(var(--dx),calc(var(--dy) + 140px)) rotate(var(--rot));opacity:0}}
 </style>
 </head>
 <body>
@@ -4371,7 +4378,7 @@ function newFortnight(from, start) {
     fn.income = from.income.filter(i => !/^carried over/i.test(i.name)).map(i => ({ id: uid('bi'), name: i.name, amount: /salary|wage|pay/i.test(i.name) ? +i.amount || 0 : 0 }));
     const left = budTotals(from).remaining;
     if (left > 0.004) fn.income.push({ id: uid('bi'), name: 'Carried over from last fortnight', amount: r2(left) });
-    fn.items = from.items.filter(i => i.sec !== 'seasonal' || budLeft(i) > 0.004 || isGoal(i))
+    fn.items = from.items.filter(i => !(isGoal(i) && i.achieved) && (i.sec !== 'seasonal' || budLeft(i) > 0.004 || isGoal(i)))
       .map(i => ({ id: uid('bb'), sec: i.sec, name: i.name, budget: +i.budget || 0, saved: Math.max(0, budLeft(i)), transferred: null, actual: null, goal: i.goal, target: i.target, note: i.note, type: i.type }));
   } else {
     fn.income = ['Salary', 'Doordash', 'Gigs', 'Other'].map(n => ({ id: uid('bi'), name: n, amount: 0 }));
@@ -4391,7 +4398,7 @@ function budSectionTile(fn, sec, label, t) {
   return `<section class="panel"><h2>${label}</h2>
     <div class="scroll-x"><table class="tbl btbl bsec" data-bsec-table="${sec}"><thead><tr><th>Item</th><th class="num">Budget per FN</th><th class="num">Current saved</th><th class="num">Transferred</th><th class="num">Actual used</th><th class="num">% of income</th><th></th></tr></thead><tbody>
     ${items.map(i => `<tr class="bitem" data-bitem="${i.id}" data-bsec="${sec}">
-      <td class="bcell-name"><div class="bname-wrap"><button class="drag-h" data-bdrag="${i.id}" data-bkind="item" tabindex="-1" aria-hidden="true" title="Drag to move">⠿</button><input class="input bname" data-change="bud-field" data-fid="i:${i.id}:name" value="${esc(i.name)}" aria-label="Item name">${isGoal(i) ? `<span class="goal-dot" title="Saving goal${i.target ? `: ${money2(i.target)}` : ''}">🎯</span>` : ''}<button class="bnote-btn ${i.note ? 'has' : ''}" tabindex="-1" data-action="bud-note" data-id="${i.id}" aria-label="Notes for ${esc(i.name)}" title="${i.note ? esc(i.note) : 'Add a note'}">✎</button></div>${i.note ? `<div class="bnote">${esc(i.note)}</div>` : ''}</td>
+      <td class="bcell-name"><div class="bname-wrap"><button class="drag-h" data-bdrag="${i.id}" data-bkind="item" tabindex="-1" aria-hidden="true" title="Drag to move">⠿</button><input class="input bname" data-change="bud-field" data-fid="i:${i.id}:name" value="${esc(i.name)}" aria-label="Item name">${isGoal(i) ? `<span class="goal-dot" title="${i.achieved ? 'Goal achieved' : `Saving goal${i.target ? `: ${money2(i.target)}` : ''}`}">${i.achieved ? '🎉' : '🎯'}</span>` : ''}<button class="bnote-btn ${i.note ? 'has' : ''}" tabindex="-1" data-action="bud-note" data-id="${i.id}" aria-label="Notes for ${esc(i.name)}" title="${i.note ? esc(i.note) : 'Add a note'}">✎</button></div>${i.note ? `<div class="bnote">${esc(i.note)}</div>` : ''}</td>
       <td class="num" data-label="Budget per FN">${bNum(i.budget, `i:${i.id}:budget`, '0')}</td>
       <td class="num" data-label="Current saved">${bNum(i.saved, `i:${i.id}:saved`, '0')}</td>
       <td class="num" data-label="Transferred">${i.transferred == null || i.transferred === '' ? `<input class="input bnum is-auto" inputmode="decimal" data-change="bud-field" data-fid="i:${i.id}:transferred" value="${budTr(i).toFixed(2)}" title="Budget − Current saved. Type a different amount to override." data-auto="${budTr(i).toFixed(2)}">` : bNum(i.transferred, `i:${i.id}:transferred`, '0', `title="Typed amount. Clear it to go back to Budget − Current saved."`)}</td>
@@ -4419,13 +4426,15 @@ function goalInfo(i, fn) {
 }
 function goalRow(i, fn, compact) {
   const g = goalInfo(i, fn);
-  return `<div class="goal ${compact ? 'compact' : ''}"><div class="goal-top"><b>${esc(goalName(i))}</b><span>${money2(g.saved).replace('.00', '')}${g.target ? ` of ${money2(g.target).replace('.00', '')}` : ''}</span></div>
+  if (i.achieved) return `<div class="goal done is-done"><div class="goal-top"><button class="check" data-action="goal-done" data-fn="${fn.id}" data-id="${i.id}" aria-pressed="true" aria-label="Mark ${esc(goalName(i))} as not achieved"></button><b>${esc(goalName(i))}</b><span>${money2(Math.max(g.saved, +i.target || 0)).replace('.00', '')}</span></div><small>Achieved ${D.label(i.achieved)} 🎉</small></div>`;
+  return `<div class="goal ${compact ? 'compact' : ''}"><div class="goal-top">${compact ? '' : `<button class="check" data-action="goal-done" data-fn="${fn.id}" data-id="${i.id}" aria-pressed="false" aria-label="Tick off ${esc(goalName(i))}" title="Tick off: goal achieved"></button>`}<b>${esc(goalName(i))}</b><span>${money2(g.saved).replace('.00', '')}${g.target ? ` of ${money2(g.target).replace('.00', '')}` : ''}</span></div>
     ${g.target ? `<span class="goal-bar"><i style="width:${g.pct}%"></i></span><small>${g.pct}%${g.eta ? ` · ${esc(g.eta)}` : ''}</small>` : `<small>No target yet. <button class="linkbtn" data-action="goal-target" data-fn="${fn.id}" data-id="${i.id}">Set a target</button></small>`}</div>`;
 }
 function goalsTile(fn) {
-  const goals = fn.items.filter(isGoal);
+  const goals = fn.items.filter(i => isGoal(i) && !i.achieved), done = fn.items.filter(i => isGoal(i) && i.achieved);
   return `<section class="panel"><h2>Saving goals</h2>
-    ${goals.length ? goals.map(i => goalRow(i, fn)).join('') : '<p class="empty">No saving goals yet.</p>'}
+    ${goals.length ? goals.map(i => goalRow(i, fn)).join('') : `<p class="empty">${done.length ? 'Every goal ticked off. Nice work.' : 'No saving goals yet.'}</p>`}
+    ${done.length ? `<h3 class="ms-h">Achieved</h3>${done.map(i => goalRow(i, fn)).join('')}` : ''}
     <form class="inline-form" data-form="goal-add" style="margin-top:12px"><input class="input" name="name" placeholder="New goal, e.g. Pedalboard upgrade" aria-label="Goal name"><input class="input bnum" name="target" inputmode="decimal" placeholder="Target $" aria-label="Target amount"><input class="input bnum" name="per" inputmode="decimal" placeholder="Per FN $" aria-label="Amount to put aside each fortnight"><button class="btn small" type="submit">Add a goal</button></form>
   </section>`;
 }
@@ -4566,6 +4575,18 @@ function budDragUp() {
   else { let last = -1; list.forEach((x, k) => { if (x.sec === moved.sec) last = k; }); list.splice(last + 1, 0, moved); }
   commit(); if (d.kind === 'item') toast(`Moved ${moved.name}${d.sec ? ` to ${BUD_SECS.find(s => s[0] === moved.sec)[1]}` : ''}`, snap);
 }
+/** A small confetti burst (skipped if you prefer reduced motion). */
+function celebrate(fromEl) {
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = (fromEl && fromEl.getBoundingClientRect && fromEl.getBoundingClientRect()) || { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
+  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2, cols = MARK_FUN.colours;
+  for (let k = 0; k < 28; k++) {
+    const d = document.createElement('i'); d.className = 'confetti';
+    const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 110;
+    d.style.cssText = `left:${x0}px;top:${y0}px;background:${cols[k % cols.length]};--dx:${Math.cos(a) * v}px;--dy:${Math.sin(a) * v - 60}px;--rot:${Math.random() * 720 - 360}deg`;
+    document.body.appendChild(d); setTimeout(() => d.remove(), 1100);
+  }
+}
 /** Money at a glance for the Snapshot page. */
 function moneySnapshot() {
   const fns = budFns(), T = D.today();
@@ -4599,7 +4620,7 @@ function moneySnapshot() {
       <div class="ms-cell"><span>Next payday</span><b>${pay ? D.label(pay) : '—'}</b><small>${pay ? (D.diff(pay) === 0 ? 'Today' : `In ${plural(D.diff(pay), 'day')}`) : 'Add "Payday" to your calendar'}</small></div>
     </div>
     ${billsSoonHtml()}
-    ${fn && fn.items.some(isGoal) ? `<h3 class="ms-h">Saving goals</h3>${fn.items.filter(isGoal).map(i => goalRow(i, fn, true)).join('')}` : ''}
+    ${fn && fn.items.some(i => isGoal(i) && !i.achieved) ? `<h3 class="ms-h">Saving goals</h3>${fn.items.filter(i => isGoal(i) && !i.achieved).map(i => goalRow(i, fn, true)).join('')}` : ''}
     <div class="inline-form" style="margin-top:10px"><button class="btn small" data-action="nav" data-view="budget">Open Budget</button><button class="btn small ghost" data-action="nav" data-view="music">Gigs and invoices</button></div>
   </section>`;
 }
@@ -5395,6 +5416,13 @@ const ACTIONS = {
   },
   'bud-export-go'(el) { closeOverlay(); exportBudget(el.dataset.s); },
   'bud-note'(el) { openBudNote(el.dataset.id); },
+  'goal-done'(el) {
+    const f = S().budget.fns.find(x => x.id === el.dataset.fn), i = f && f.items.find(x => x.id === el.dataset.id); if (!i) return;
+    const snap = Store.snapshot(), key = goalName(i).toLowerCase(), on = !i.achieved;
+    budFns().filter(g => g.start >= f.start).forEach(g => g.items.forEach(x => { if (isGoal(x) && goalName(x).toLowerCase() === key) { if (on) x.achieved = D.today(); else delete x.achieved; } }));
+    commit();
+    if (on) { toast(`🎉 ${goalName(i)} achieved! It won't carry into new fortnights.`, snap); celebrate(el); } else toast(`${goalName(i)} is back in progress`, snap);
+  },
   'goal-target'(el) { S().budget.activeId = el.dataset.fn; Store.save(); if (VIEW !== 'budget') go('budget'); else render(); setTimeout(() => { openBudNote(el.dataset.id); setTimeout(() => $('form[data-form=bud-note] input[name=target]')?.focus(), 0); }, 50); },
   'bud-fy'(el) { const st = S(), y = +el.dataset.y, s = st.settings.open_budfy || (st.settings.open_budfy = [fyOfDate(D.today())]), i = s.indexOf(y); if (i >= 0) s.splice(i, 1); else s.push(y); Store.save(); render(); },
   'bud-chart'(el) { budChartPeriod = el.dataset.p; render(); },
