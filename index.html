@@ -766,6 +766,14 @@ tr.bdrop-after td{box-shadow:inset 0 -3px 0 var(--accent)}
 .goal.done b{text-decoration:line-through;text-decoration-color:var(--muted)}
 .confetti{position:fixed;width:8px;height:12px;border-radius:2px;z-index:200;pointer-events:none;animation:confetti 1s cubic-bezier(.2,.7,.4,1) forwards}
 @keyframes confetti{to{transform:translate(var(--dx),calc(var(--dy) + 140px)) rotate(var(--rot));opacity:0}}
+.week button{background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer;display:block;width:100%;text-align:center}
+.week button i{width:100%}
+.week button:hover i{outline:2px solid var(--accent);outline-offset:1px}
+.week button:focus-visible i{outline:3px solid var(--accent);outline-offset:2px}
+.rest-row{align-items:center}
+.rest-pick .input{width:auto;padding:5px 8px;font-size:14px}
+.date-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.date-row .input{flex:1;min-width:150px}
 </style>
 </head>
 <body>
@@ -2865,7 +2873,7 @@ function fitnessCard() {
   const last = f.weights[f.weights.length - 1];
   return `<section class="panel"><h2>Fitness this week</h2>
     <div class="bigfig">${n} of ${f.goalPerWeek} workouts</div>
-    <div class="week">${days.map(d => `<div class="${d.has ? 'has' : d.rest ? 'rest' : d.planned ? 'planned' : ''} ${d.today ? 'today' : ''}" title="${d.has ? 'Workout done' : d.rest ? 'Rest day' : d.planned ? 'Workout in your calendar' : ''}"><i></i>${d.l}</div>`).join('')}</div>
+    <div class="week">${days.map(d => `<button type="button" class="${d.has ? 'has' : d.rest ? 'rest' : d.planned ? 'planned' : ''} ${d.today ? 'today' : ''}" data-action="day-log" data-d="${d.d}" aria-label="${d.l}: ${d.has ? 'workout done' : d.rest ? 'rest day' : 'nothing logged'}. Tap to log." title="${d.has ? 'Workout done' : d.rest ? 'Rest day' : d.planned ? 'Workout in your calendar' : ''}"><i></i>${d.l}</button>`).join('')}</div>
     ${last ? `<p style="margin:0 0 6px">${last.kg} kg <span class="muted">${D.rel(last.date)}</span></p>${weightChart(f.weights.slice(-8), 260, 60, false)}` : ''}
     <p style="margin:12px 0 0"><button class="btn small" data-action="nav" data-view="fitness">Log a workout</button></p></section>`;
 }
@@ -4271,6 +4279,23 @@ function lineChart(pts, unit, goal) {
     ${pts.map((p, i) => `<g><title>${esc(p.tip)}</title><circle cx="${x(i)}" cy="${y(p.v)}" r="${p.cur ? 5 : 3.8}" fill="${p.cur ? 'var(--surface)' : 'var(--c-health)'}" stroke="var(--c-health)" stroke-width="2"/>${i % every === 0 || i === n - 1 ? `<text x="${x(i)}" y="${H - 9}" text-anchor="${i === n - 1 ? 'end' : i === 0 ? 'start' : 'middle'}" font-size="11" fill="var(--muted)">${esc(p.label)}</text>` : ''}</g>`).join('')}
   </svg>${unit ? `<p class="muted" style="margin:4px 0 0;font-size:13px">In ${unit === 'min' ? 'minutes' : unit === 'm' ? 'metres climbed' : unit}. Point at a dot for details.</p>` : ''}`;
 }
+/** Log a rest day for any date (not twice for the same day). */
+function logRestDay(day) {
+  const st = S();
+  if (st.fitness.workouts.some(w => w.rest && w.date === day)) { toast(`${D.label(day)} is already a rest day`); return; }
+  const snap = Store.snapshot();
+  st.fitness.workouts.push({ id: uid('w'), date: day, type: 'Rest day', minutes: 0, notes: '', exercises: [], rest: true });
+  closeOverlay(); commit(); toast(`Rest day logged for ${D.label(day)}${day === D.today() ? '. Enjoy it.' : ''}`, snap);
+}
+/** Tap a day on the week strip: log a workout or rest day for it. */
+function openDayLog(day) {
+  const ws = allWorkouts().filter(w => w.date === day), rest = restDays().some(w => w.date === day), future = day > D.today();
+  $('#overlay').innerHTML = `<div class="scrim" data-action="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+    <div class="modal-head"><h2 id="dl-title">${D.parse(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</h2><button class="btn small ghost" data-action="close">Close</button></div>
+    ${ws.length || rest ? `<ul class="rows" style="margin-bottom:12px">${ws.map(w => `<li class="row"><div class="row-main">${w.fromCal ? workoutText(w) : `<button class="row-title" data-action="wo-edit" data-id="${w.id}">${workoutText(w)}</button>`}</div></li>`).join('')}${rest ? '<li class="row"><div class="row-main">😴 Rest day</div></li>' : ''}</ul>` : `<p class="muted" style="margin-top:0">${future ? 'This day hasn’t happened yet.' : 'Nothing logged for this day.'}</p>`}
+    ${future ? '' : `<div class="inline-form"><button class="btn primary" data-action="day-workout" data-d="${day}">Log a workout</button>${rest ? '' : `<button class="btn" data-action="rest-day" data-d="${day}">Log a rest day</button>`}</div>`}
+  </div></div>`;
+}
 function viewFitness() {
   const f = S().fitness;
   const last30 = f.weights.filter(w => D.diff(w.date) >= -35);
@@ -4282,11 +4307,11 @@ function viewFitness() {
   <div class="grid g-2">
     ${fitnessCard().replace('<button class="btn small" data-action="nav" data-view="fitness">Log a workout</button>', '')}
     <section class="panel"><h2>Log a workout</h2>
-      <div class="inline-form" style="margin-bottom:10px"><button class="btn small" data-action="rest-day">Log a rest day today</button></div>
+      <div class="inline-form rest-row" style="margin-bottom:10px"><span class="muted">Log a rest day:</span><button class="btn small" data-action="rest-day" data-d="${D.today()}">Today</button><button class="btn small" data-action="rest-day" data-d="${D.add(D.today(), -1)}">Yesterday</button><label class="rest-pick"><span class="sr">Pick a date</span><input class="input" type="date" data-change="rest-day-date" max="${D.today()}" aria-label="Pick a date for a rest day"></label></div>
       <form class="form-grid wo-form" data-form="workout" data-kind="Weights">
         <label class="field">Kind<select class="input" name="type" data-change="wo-kind">${kindOpts('Weights')}</select></label>
         <label class="field">Minutes<input class="input" name="minutes" type="number" min="5" max="400" value="30"></label>
-        <label class="field">Date<input class="input" name="date" type="date" value="${D.today()}"></label>
+        <div class="field"><span>Date</span><div class="date-row"><input class="input" name="date" type="date" value="${D.today()}" max="${D.today()}" aria-label="Workout date"><button type="button" class="btn small ghost" data-action="wo-date" data-d="${D.today()}">Today</button><button type="button" class="btn small ghost" data-action="wo-date" data-d="${D.add(D.today(), -1)}">Yesterday</button></div></div>
         <label class="field wo-dist">Distance (km)<input class="input" name="km" type="number" step="0.1" min="0" max="500" placeholder="e.g. 8.5"></label>
         ${trailFields()}
         <label class="field">Note<input class="input" name="notes" placeholder="Optional"></label>
@@ -5397,8 +5422,14 @@ const ACTIONS = {
   },
   'wo-del'(el) { const snap = Store.snapshot(); S().fitness.workouts = S().fitness.workouts.filter(w => w.id !== el.dataset.id); closeOverlay(); commit(); toast('Workout deleted', snap); },
   'wo-edit'(el) { openWorkoutModal(el.dataset.id); },
+  'day-log'(el) { openDayLog(el.dataset.d); },
+  'day-workout'(el) {
+    const day = el.dataset.d; closeOverlay(); if (VIEW !== 'fitness') go('fitness');
+    setTimeout(() => { const f = $('form[data-form=workout]'); if (!f) return; f.elements.date.value = day; f.scrollIntoView({ behavior: 'smooth', block: 'start' }); f.elements.minutes.focus(); toast(`Logging a workout for ${D.label(day)}`); }, 50);
+  },
+  'wo-date'(el) { const f = el.closest('form'); if (f) f.elements.date.value = el.dataset.d; },
   'wo-copy'(el) { copyWorkout(el.dataset.id); },
-  'rest-day'() { const st = S(), snap = Store.snapshot(); if (st.fitness.workouts.some(w => w.rest && w.date === D.today())) { toast('Today is already a rest day'); return; } st.fitness.workouts.push({ id: uid('w'), date: D.today(), type: 'Rest day', minutes: 0, notes: '', exercises: [], rest: true }); commit(); toast('Rest day logged. Enjoy it.', snap); },
+  'rest-day'(el) { logRestDay((el && el.dataset.d) || D.today()); },
   'bud-go'(el) { const fns = budFns(), i = fns.findIndex(x => x.id === budActive().id) + +el.dataset.d; if (fns[i]) { S().budget.activeId = fns[i].id; Store.save(); render(); } },
   'bud-open'(el) { S().budget.activeId = el.dataset.id; Store.save(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
   'bud-new'() { const cur = budFns().slice(-1)[0], st = S(), snap = Store.snapshot(); const f = newFortnight(cur, cur ? D.add(cur.start, 14) : (lastPayday() || D.today())); st.budget.fns.push(f); st.budget.activeId = f.id; commit(); toast(`Started ${fnLabel(f)}. Leftover item money is in Current saved${f.income.some(x => /^carried over/i.test(x.name)) ? ', and unallocated money is carried over as income' : ''}.`, snap); },
@@ -5891,6 +5922,7 @@ function boot() {
       Store.save();
       const opt = document.createElement('option'); opt.value = k; opt.textContent = cap(name); el.insertBefore(opt, el.lastElementChild); el.value = k;
     }
+    else if (kind === 'rest-day-date') { if (el.value) logRestDay(el.value); }
     else if (kind === 'bud-field') { budField(el); }
     else if (kind === 'bud-pick') { S().budget.activeId = el.value; Store.save(); render(); }
     else if (kind === 'exp-fy') { expFY = +el.value; openExpensesList(); }
