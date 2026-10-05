@@ -774,6 +774,10 @@ tr.bdrop-after td{box-shadow:inset 0 -3px 0 var(--accent)}
 .rest-pick .input{width:auto;padding:5px 8px;font-size:14px}
 .date-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .date-row .input{flex:1;min-width:150px}
+.bills-due{background:var(--surface-2);border-radius:12px;padding:10px 12px;margin-top:12px}
+.bills-due-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.bills-due-head .btn{margin-left:auto}
+.bills-due .row{padding:6px 0}
 </style>
 </head>
 <body>
@@ -4414,8 +4418,8 @@ function gigsPaidIn(fn) { const a = fn.start, b = D.add(fn.start, 13); return S(
 function billsIn(fn) {
   const a = fn.start, b = D.add(fn.start, 13), have = new Set(fn.items.map(i => i.name.toLowerCase()));
   return allCalEvents().filter(e => evKind(e) === 'bill' && e.date >= a && e.date <= b)
-    .map(e => ({ id: e.id, name: e.title.replace(/\$\s?[\d,]+(\.\d+)?/, '').replace(/\s+(comes out|due)\s*$/i, '').trim() || e.title, amount: e.amount || 0, date: e.date }))
-    .filter(x => !have.has(x.name.toLowerCase()));
+    .map(e => ({ id: e.id, name: e.title.replace(/\$\s?[\d,]+(\.\d+)?/, '').replace(/\s+(comes out|due)\s*$/i, '').trim() || e.title, amount: e.amount || 0, date: e.date, paid: !!S().calPaid[e.id], color: evColor(e) }))
+    .map(x => ({ ...x, inBudget: have.has(x.name.toLowerCase()) }));
 }
 const bNum = (v, fid, ph, extra = '') => `<input class="input bnum" inputmode="decimal" data-change="bud-field" data-fid="${fid}" value="${v == null || v === '' ? '' : r2(v).toFixed(2)}" placeholder="${ph ?? ''}" ${extra}>`;
 function budSectionTile(fn, sec, label, t) {
@@ -4689,7 +4693,8 @@ function viewBudget() {
       <div><span>Actual used</span><b>${money2(t.spent)}</b><small>${t.income ? (t.spent / t.income * 100).toFixed(0) + '% of income' : ''}</small></div>
     </div>
     ${gigSum && (!gigRow || Math.abs((+gigRow.amount || 0) - gigSum) > 0.004) ? `<div class="notice"><span>${plural(gigs.length, 'gig')} paid you ${money2(gigSum)} this fortnight.</span><button class="btn small" data-action="bud-gigs" data-v="${gigSum}">Use for Gigs income</button></div>` : ''}
-    ${bills.length ? `<div class="notice"><span>Bills due this fortnight: ${esc(listJoin(bills.map(b => `${b.name}${b.amount ? ' ' + money2(b.amount) : ''} (${D.label(b.date)})`)))}.</span><button class="btn small" data-action="bud-bills">Add to Seasonal</button></div>` : ''}
+    ${bills.some(b => !b.paid) ? `<div class="bills-due"><div class="bills-due-head"><b>Bills due this fortnight</b>${bills.some(b => !b.paid && b.amount) ? `<span class="muted">${money2(bills.filter(b => !b.paid).reduce((a, b) => a + (+b.amount || 0), 0))} still to pay</span>` : ''}${bills.some(b => !b.paid && !b.inBudget) ? '<button class="btn small" data-action="bud-bills">Add unpaid to Seasonal</button>' : ''}</div>
+      <ul class="rows">${bills.map(b => `<li class="row ${b.paid ? 'is-done' : ''}"><button class="check" data-action="calbill-paid" data-id="${esc(b.id)}" aria-pressed="${b.paid}" aria-label="${b.paid ? 'Mark unpaid' : 'Mark paid'}: ${esc(b.name)}"></button><div class="row-main"><span>${b.color ? `<i class="cdot" style="background:${b.color}"></i>` : ''}${esc(b.name)}</span>${b.inBudget ? '<div class="row-meta"><span>In your budget</span></div>' : ''}</div><span class="chip ${!b.paid && D.diff(b.date) <= 1 ? 'warn' : ''}">${D.label(b.date)}</span><b class="ms-amt">${b.amount ? money2(b.amount) : ''}</b></li>`).join('')}</ul></div>` : ''}
   </section>
   <section class="panel"><h2>Income</h2>
     <div class="scroll-x"><table class="tbl btbl"><thead><tr><th>Source</th><th class="num">Amount</th><th></th></tr></thead><tbody>
@@ -5437,7 +5442,7 @@ const ACTIONS = {
   'bud-del'(el) { const fn = budActive(), snap = Store.snapshot(); fn.items = fn.items.filter(x => x.id !== el.dataset.id); commit(); toast('Item removed', snap); },
   'bud-del-inc'(el) { const fn = budActive(), snap = Store.snapshot(); fn.income = fn.income.filter(x => x.id !== el.dataset.id); commit(); toast('Income removed', snap); },
   'bud-gigs'(el) { const fn = budActive(); let g = fn.income.find(x => /gig/i.test(x.name)); if (!g) { g = { id: uid('bi'), name: 'Gigs', amount: 0 }; fn.income.push(g); } g.amount = r2(+el.dataset.v); commit(); toast('Gigs income filled in'); },
-  'bud-bills'() { const fn = budActive(), snap = Store.snapshot(), bills = billsIn(fn); bills.forEach(b => fn.items.push({ id: uid('bb'), sec: 'seasonal', name: b.name, budget: r2(b.amount), saved: 0, transferred: null, actual: null })); commit(); toast(`${plural(bills.length, 'bill')} added to Seasonal`, snap); },
+  'bud-bills'() { const fn = budActive(), snap = Store.snapshot(), bills = billsIn(fn).filter(b => !b.paid && !b.inBudget); bills.forEach(b => fn.items.push({ id: uid('bb'), sec: 'seasonal', name: b.name, budget: r2(b.amount), saved: 0, transferred: null, actual: null })); commit(); toast(`${plural(bills.length, 'bill')} added to Seasonal`, snap); },
   'bud-import'() { $('#budget-file').click(); },
   'bud-export'() {
     const fy = fyOfDate((budActive() || { start: D.today() }).start);
