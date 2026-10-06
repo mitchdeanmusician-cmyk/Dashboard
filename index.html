@@ -778,6 +778,8 @@ tr.bdrop-after td{box-shadow:inset 0 -3px 0 var(--accent)}
 .bills-due-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .bills-due-head .btn{margin-left:auto}
 .bills-due .row{padding:6px 0}
+.todo-add{margin-bottom:10px}
+.todo-add input[type=date]{flex:0 0 auto;width:auto;padding:6px 8px;font-size:14px;color:var(--ink-2)}
 </style>
 </head>
 <body>
@@ -3078,7 +3080,9 @@ function viewTeaching() {
   <section class="panel"><h2>Weekly timetable</h2>${timetableGrid()}</section>
   <div class="grid g-2 section-gap">
     <section class="panel"><h2>Assessments and marking</h2>${of('assessment').length ? of('assessment').map(markingRow).join('') : '<p class="empty">No marking on the list.</p>'}</section>
-    <section class="panel"><h2>To do</h2>${rows(toDo, { noCat: true, showType: true, est: true }, 'Nothing on the list. Add something in the box above.')}</section>
+    <section class="panel"><h2>To do</h2>
+      <form class="inline-form todo-add" data-form="teach-todo"><input class="input" name="t" placeholder="Add a to-do, e.g. Print Year 8 worksheets" aria-label="New teaching to-do"><input class="input" type="date" name="due" aria-label="Due date (optional)"><button class="btn small primary" type="submit">+ Add</button></form>
+      ${rows(toDo, { noCat: true, showType: true, est: true }, 'Nothing on the list.')}</section>
   </div>
   <section class="panel section-gap"><h2>Other classes and commitments</h2>${calCommitRows(e => e.category === 'teaching', 21)}${classes.length ? rows(classes, { noCat: true }) : calCommitCount(e => e.category === 'teaching', 21) ? '' : '<p class="empty">Nothing coming up.</p>'}</section>
   ${done.length ? `<section class="panel section-gap plain" style="background:transparent"><h2>Recently finished</h2>${rows(done, { noCat: true })}</section>` : ''}`;
@@ -5818,6 +5822,14 @@ function boot() {
       { const key = goalName(i).toLowerCase(); budFns().filter(g => g.start > fn.start).forEach(g => g.items.forEach(x => { if (isGoal(x) && goalName(x).toLowerCase() === key) { x.target = i.target; if (i.goal) x.goal = true; } })); }
       i.note = f.elements.note.value.trim(); const ty = val('type'); i.type = ty === '__new' || ty === budTypeOf({ name: i.name }) ? undefined : ty;
       closeOverlay(); commit();
+    } else if (kind === 'teach-todo') {
+      const text = val('t'); if (!text) return;
+      const p = parseThought(text, { forceCategory: 'teaching' }); if (!p) return;
+      if (val('due')) p.due = val('due');
+      if (p.type === 'class' || p.type === 'idea') p.type = 'task';
+      const snap = Store.snapshot(); fileItem(p); commit();
+      toast(`Added "${p.title}"${p.due ? `, due ${D.label(p.due)}` : ''}`, snap);
+      setTimeout(() => $('form[data-form=teach-todo] input[name=t]')?.focus(), 0);
     } else if (kind === 'bud-first') {
       const f = newFortnight(null, val('start') || D.today()); st.budget.fns.push(f); st.budget.activeId = f.id; commit();
     } else if (kind === 'bud-add') {
